@@ -1,0 +1,817 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Internal Transfer - Inventory Management System</title>
+    <!-- Tailwind CSS (Production) -->
+    <link href="./public/css/style.css" rel="stylesheet">
+    <!-- SheetJS for Export -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <!-- jsPDF for Export -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.29/jspdf.plugin.autotable.min.js"></script>
+
+    <style>
+        .sort-header {
+            cursor: pointer;
+            user-select: none;
+            transition: background-color 0.2s;
+        }
+
+        .sort-header:hover {
+            background-color: #f3f4f6;
+        }
+
+        .sort-icon {
+            display: inline-block;
+            margin-left: 4px;
+            font-size: 0.8em;
+            color: #9ca3af;
+        }
+
+        .sort-header.active {
+            color: #2563eb;
+        }
+
+        .sort-header.active .sort-icon {
+            color: #2563eb;
+        }
+
+        .pagination-button {
+            padding: 0.25rem 0.75rem;
+            border: 1px solid #d1d5db;
+            border-radius: 0.375rem;
+            background-color: white;
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: #374151;
+            cursor: pointer;
+        }
+
+        .pagination-button:hover:not(:disabled) {
+            background-color: #f9fafb;
+        }
+
+        .pagination-button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .pagination-active {
+            background-color: #3b82f6;
+            color: white;
+            border-color: #3b82f6;
+        }
+
+        .pagination-active:hover:not(:disabled) {
+            background-color: #2563eb;
+        }
+
+        .table-container {
+            max-height: 60vh;
+            overflow-y: auto;
+        }
+    </style>
+</head>
+
+<body class="bg-gray-100 min-h-screen flex">
+    <!-- Loading Spinner -->
+    <div id="loading-spinner" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-blue-500"></div>
+    </div>
+
+    <!-- Sidebar -->
+    <aside id="sidebar" class="sidebar bg-gray-800 text-white w-64 min-h-screen flex flex-col flex-shrink-0">
+        <div class="p-4 border-b border-gray-700 h-20 flex items-center shadow-md">
+            <!-- Logo and Title -->
+            <div class="sidebar-logo-container space-x-3">
+                <img src="./public/assets/UnionGroupLogo.png" alt="Logo"
+                    class="logo-img border-2 border-blue-500 shadow-sm">
+                <h1 class="text-lg font-bold menu-text whitespace-nowrap overflow-hidden">Inventory <span
+                        class="text-blue-400">System</span></h1>
+            </div>
+        </div>
+        <nav class="flex-1 p-2">
+            <ul class="space-y-1">
+                <li>
+                    <a href="dashboard.html" class="flex items-center p-2 text-gray-300 hover:bg-gray-700 rounded">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" viewBox="0 0 20 20"
+                            fill="currentColor">
+                            <path
+                                d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z" />
+                        </svg>
+                        <span class="menu-text">Dashboard</span>
+                        <span
+                            class="tooltip absolute ml-8 px-2 py-1 bg-gray-900 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity">Dashboard</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="inventory.html" class="flex items-center p-2 text-gray-300 hover:bg-gray-700 rounded">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" viewBox="0 0 20 20"
+                            fill="currentColor">
+                            <path fill-rule="evenodd"
+                                d="M4 4a2 2 0 00-2 2v4a2 2 0 002 2V6h10a2 2 0 00-2-2H4zm2 6a2 2 0 012-2h8a2 2 0 012 2v4a2 2 0 01-2 2H8a2 2 0 01-2-2v-4zm6 4a2 2 0 100-4 2 2 0 000 4z"
+                                clip-rule="evenodd" />
+                        </svg>
+                        <span class="menu-text">Inventory</span>
+                        <span
+                            class="tooltip absolute ml-8 px-2 py-1 bg-gray-900 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity">Inventory</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="receiving.html" class="flex items-center p-2 text-gray-300 hover:bg-gray-700 rounded">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" viewBox="0 0 20 20"
+                            fill="currentColor">
+                            <path fill-rule="evenodd"
+                                d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                                clip-rule="evenodd" />
+                        </svg>
+                        <span class="menu-text">Receiving</span>
+                        <span
+                            class="tooltip absolute ml-8 px-2 py-1 bg-gray-900 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity">Receiving</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="internal-transfer.html" class="flex items-center p-2 bg-blue-600 rounded text-white">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" viewBox="0 0 20 20"
+                            fill="currentColor">
+                            <path fill-rule="evenodd"
+                                d="M9.707 14.707a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 1.414L7.414 9H15a1 1 0 110 2H7.414l2.293 2.293a1 1 0 010 1.414z"
+                                clip-rule="evenodd" />
+                        </svg>
+                        <span class="menu-text">Internal Transfer</span>
+                        <span
+                            class="tooltip absolute ml-8 px-2 py-1 bg-gray-900 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity">Internal
+                            Transfer</span>
+                    </a>
+                </li>
+                <li id="admin-menu" class="hidden">
+                    <a href="upload.html" class="flex items-center p-2 text-gray-300 hover:bg-gray-700 rounded">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" viewBox="0 0 20 20"
+                            fill="currentColor">
+                            <path fill-rule="evenodd"
+                                d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z"
+                                clip-rule="evenodd" />
+                        </svg>
+                        <span class="menu-text">Upload Data</span>
+                        <span
+                            class="tooltip absolute ml-8 px-2 py-1 bg-gray-900 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity">Upload
+                            Data</span>
+                    </a>
+                </li>
+            </ul>
+        </nav>
+    </aside>
+
+    <!-- Main Content -->
+    <div class="flex-1 flex flex-col min-w-0">
+        <!-- Top Navbar -->
+        <header class="bg-white shadow-sm p-4 flex justify-between items-center">
+            <div class="flex items-center">
+                <button id="sidebar-toggle" class="mr-4 text-gray-500 focus:outline-none">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24"
+                        stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M4 6h16M4 12h16M4 18h16" />
+                    </svg>
+                </button>
+                <h2 class="text-xl font-semibold text-gray-800">Internal Transfer</h2>
+            </div>
+            <div class="flex items-center space-x-2 sm:space-x-4">
+                <div id="user-info" class="text-right hidden sm:block">
+                    <p id="user-name" class="text-sm font-medium text-gray-900 truncate max-w-[150px] lg:max-w-[200px]">
+                    </p>
+                    <p id="user-role" class="text-xs text-gray-500"></p>
+                </div>
+                <button id="logout-btn"
+                    class="bg-red-500 hover:bg-red-600 text-white px-3 py-2 sm:px-4 rounded text-xs sm:text-sm">
+                    Logout
+                </button>
+            </div>
+        </header>
+
+        <!-- Main Content Area -->
+        <main class="flex-1 p-6 overflow-y-auto">
+            <!-- Filters -->
+            <div class="mb-6 bg-white p-4 rounded-lg shadow-sm">
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Month Filter</label>
+                        <input list="month-list" id="month-filter" placeholder="Select Month..."
+                            class="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <datalist id="month-list">
+                            <option value="January">
+                            <option value="February">
+                            <option value="March">
+                            <option value="April">
+                            <option value="May">
+                            <option value="June">
+                            <option value="July">
+                            <option value="August">
+                            <option value="September">
+                            <option value="October">
+                            <option value="November">
+                            <option value="December">
+                        </datalist>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">From Warehouse</label>
+                        <input list="from-warehouse-list" id="from-warehouse-filter"
+                            placeholder="Search from warehouse..."
+                            class="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <datalist id="from-warehouse-list">
+                            <!-- Populated by JS -->
+                        </datalist>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">To Warehouse</label>
+                        <input list="to-warehouse-list" id="to-warehouse-filter" placeholder="Search to warehouse..."
+                            class="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <datalist id="to-warehouse-list">
+                            <!-- Populated by JS -->
+                        </datalist>
+                    </div>
+                    <div class="flex items-end space-x-2">
+                        <button id="apply-filters"
+                            class="flex-1 bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded text-sm">
+                            Apply
+                        </button>
+                        <div class="relative group">
+                            <button
+                                class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded text-sm flex items-center">
+                                Export <svg class="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M19 9l-7 7-7-7"></path>
+                                </svg>
+                            </button>
+                            <div
+                                class="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg hidden group-hover:block z-20 border border-gray-200">
+                                <a href="#" id="export-excel"
+                                    class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Excel</a>
+                                <a href="#" id="export-pdf"
+                                    class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">PDF</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Internal Transfer Table -->
+            <div class="bg-white rounded-lg shadow-sm overflow-hidden">
+                <div class="table-container overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50 sticky top-0">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider sort-header"
+                                    data-sort="document_date">
+                                    Doc Date <span class="sort-icon">▲</span>
+                                </th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider sort-header"
+                                    data-sort="posting_date">
+                                    Post Date <span class="sort-icon">⇅</span>
+                                </th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider sort-header"
+                                    data-sort="document_number">
+                                    Doc Num <span class="sort-icon">⇅</span>
+                                </th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider sort-header"
+                                    data-sort="item_code">
+                                    Item Code <span class="sort-icon">⇅</span>
+                                </th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider sort-header"
+                                    data-sort="item_description">
+                                    Description <span class="sort-icon">⇅</span>
+                                </th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider sort-header"
+                                    data-sort="quantity">
+                                    Qty <span class="sort-icon">⇅</span>
+                                </th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider sort-header"
+                                    data-sort="unit">
+                                    Unit <span class="sort-icon">⇅</span>
+                                </th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider sort-header"
+                                    data-sort="stock_price">
+                                    Price <span class="sort-icon">⇅</span>
+                                </th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider sort-header"
+                                    data-sort="total">
+                                    Total <span class="sort-icon">⇅</span>
+                                </th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider sort-header"
+                                    data-sort="from_warehouse_code">
+                                    From Wh Code <span class="sort-icon">⇅</span>
+                                </th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider sort-header"
+                                    data-sort="from_warehouse_name">
+                                    From Wh Name <span class="sort-icon">⇅</span>
+                                </th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider sort-header"
+                                    data-sort="from_location">
+                                    From Loc <span class="sort-icon">⇅</span>
+                                </th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider sort-header"
+                                    data-sort="to_warehouse_code">
+                                    To Wh Code <span class="sort-icon">⇅</span>
+                                </th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider sort-header"
+                                    data-sort="warehouse_name">
+                                    To Wh Name <span class="sort-icon">⇅</span>
+                                </th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider sort-header"
+                                    data-sort="to_location">
+                                    To Loc <span class="sort-icon">⇅</span>
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody id="transfer-table-body" class="bg-white divide-y divide-gray-200">
+                            <!-- Table rows will be populated by JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Pagination -->
+                <div class="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6">
+                    <div class="flex-1 flex justify-between sm:hidden">
+                        <button id="prev-page-mobile" class="pagination-button">Previous</button>
+                        <button id="next-page-mobile" class="pagination-button">Next</button>
+                    </div>
+                    <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+                        <div>
+                            <p id="pagination-info" class="text-sm text-gray-700">
+                                Showing <span id="start-index">0</span> to <span id="end-index">0</span> of <span
+                                    id="total-rows">0</span> results
+                            </p>
+                        </div>
+                        <div>
+                            <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px"
+                                aria-label="Pagination">
+                                <button id="first-page" class="pagination-button rounded-l-md">First</button>
+                                <button id="prev-page" class="pagination-button">Previous</button>
+                                <span id="page-numbers" class="flex space-x-0"></span>
+                                <button id="next-page" class="pagination-button">Next</button>
+                                <button id="last-page" class="pagination-button rounded-r-md">Last</button>
+                            </nav>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Include JavaScript modules -->
+    <script type="module">
+        import { auth } from './public/js/auth.js';
+        import { Sidebar } from './public/js/sidebar.js';
+        import { formatNumber, formatDate, showToast } from './public/js/utils.js';
+
+        // Initialize internal transfer page
+        document.addEventListener('DOMContentLoaded', async function () {
+            // Check authentication
+            try {
+                const isAuthenticated = await auth.requireAuth(['user', 'admin']);
+                if (!isAuthenticated) return;
+            } catch (error) {
+                console.error('Authentication check failed:', error);
+                // Redirect to login on auth failure to prevent infinite loops
+                window.location.href = 'login.html';
+                return;
+            }
+
+            // Show user info
+            const user = auth.user;
+            document.getElementById('user-name').textContent = user?.user_metadata?.full_name || user?.email || 'User';
+            document.getElementById('user-role').textContent = auth.getUserRole();
+
+            // Show admin menu if user is admin
+            if (auth.isAdmin()) {
+                document.getElementById('admin-menu').classList.remove('hidden');
+            }
+
+            // Setup logout button
+            document.getElementById('logout-btn').addEventListener('click', async function () {
+                await auth.logout();
+                window.location.href = 'login.html';
+            });
+
+            // Initialize sidebar
+            new Sidebar();
+
+            // Initialize transfer manager
+            const transferManager = new TransferManager();
+
+            // Load initial data
+            await transferManager.loadData();
+
+            // Setup event listeners
+            setupEventListeners(transferManager);
+        });
+
+        // Transfer Manager class
+        class TransferManager {
+            constructor() {
+                this.currentPage = 1;
+                this.rowsPerPage = 100;
+                this.totalRows = 0;
+                this.filters = {
+                    fromWarehouse: '',
+                    toWarehouse: '',
+                    month: ''
+                };
+                this.sort = {
+                    column: 'document_date',
+                    ascending: false
+                };
+            }
+
+            async loadData() {
+                try {
+                    // Show loading spinner
+                    document.getElementById('loading-spinner').classList.remove('hidden');
+
+                    const supabase = auth.supabase;
+
+                    // Build base query
+                    let query = supabase.from('internal_transfer').select('*', { count: 'exact' });
+
+                    // Apply filters
+                    if (this.filters.fromWarehouse) {
+                        query = query.ilike('from_warehouse_name', `%${this.filters.fromWarehouse}%`);
+                    }
+
+                    if (this.filters.toWarehouse) {
+                        query = query.ilike('warehouse_name', `%${this.filters.toWarehouse}%`);
+                    }
+
+                    // Apply Month Filter
+                    if (this.filters.month) {
+                        const dateRanges = this.getMonthRanges(this.filters.month);
+                        if (dateRanges) {
+                            const orConditions = dateRanges.map(r => `and(document_date.gte.${r.start},document_date.lte.${r.end})`).join(',');
+                            query = query.or(orConditions);
+                        }
+                    }
+
+                    // Apply Pagination and Sorting (Server-side)
+                    const startIndex = (this.currentPage - 1) * this.rowsPerPage;
+                    const endIndex = startIndex + this.rowsPerPage - 1;
+
+                    const { data, count, error } = await query
+                        .order(this.sort.column, { ascending: this.sort.ascending })
+                        .range(startIndex, endIndex);
+
+                    if (error) throw error;
+
+                    this.totalRows = count;
+                    this.renderTable(data);
+                    this.updatePaginationControls(startIndex, Math.min(endIndex + 1, count));
+
+                    // Populate datalists
+                    this.loadFilterOptions();
+                } catch (error) {
+                    console.error('Error loading transfer data:', error);
+                } finally {
+                    document.getElementById('loading-spinner').classList.add('hidden');
+                }
+            }
+
+            renderTable(data) {
+                const tbody = document.getElementById('transfer-table-body');
+                tbody.innerHTML = '';
+
+                if (!data || data.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="15" class="px-6 py-4 text-center text-gray-500">No records found</td></tr>';
+                    return;
+                }
+
+                data.forEach(row => {
+                    const tr = document.createElement('tr');
+                    tr.className = 'hover:bg-gray-50';
+
+                    tr.innerHTML = `
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${formatDate(row.document_date) || ''}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${formatDate(row.posting_date) || ''}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-medium">${row.document_number || ''}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${row.item_code || ''}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${row.item_description || ''}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right font-medium">${formatNumber(row.quantity || 0)}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${row.unit || ''}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">${formatNumber(row.stock_price || 0)}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right font-bold">${formatNumber(row.total || 0)}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${row.from_warehouse_code || ''}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${row.from_warehouse_name || ''}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${row.from_location || ''}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${row.to_warehouse_code || ''}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${row.warehouse_name || ''}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${row.to_location || ''}</td>
+                    `;
+
+                    tbody.appendChild(tr);
+                });
+            }
+
+            updatePaginationControls(startIndex, endIndex) {
+                // Update pagination info
+                document.getElementById('start-index').textContent = this.totalRows > 0 ? startIndex + 1 : 0;
+                document.getElementById('end-index').textContent = endIndex;
+                document.getElementById('total-rows').textContent = this.totalRows;
+
+                // Calculate total pages
+                const totalPages = Math.ceil(this.totalRows / this.rowsPerPage);
+
+                // Update page buttons
+                const pageNumbersContainer = document.getElementById('page-numbers');
+                pageNumbersContainer.innerHTML = '';
+
+                // Determine which page numbers to show
+                const maxVisiblePages = 5;
+                let startPage = Math.max(1, this.currentPage - Math.floor(maxVisiblePages / 2));
+                let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
+
+                if (endPage - startPage + 1 < maxVisiblePages) {
+                    startPage = Math.max(1, endPage - maxVisiblePages + 1);
+                }
+
+                // Add page number buttons
+                for (let i = startPage; i <= endPage; i++) {
+                    const button = document.createElement('button');
+                    button.className = `pagination-button ${i === this.currentPage ? 'pagination-active' : ''}`;
+                    button.textContent = i;
+                    button.onclick = () => {
+                        this.currentPage = i;
+                        this.loadData();
+                    };
+                    pageNumbersContainer.appendChild(button);
+                }
+
+                // Update previous/next buttons
+                const isFirstPage = this.currentPage === 1;
+                const isLastPage = this.currentPage === totalPages || totalPages === 0;
+
+                document.getElementById('prev-page').disabled = isFirstPage;
+                document.getElementById('next-page').disabled = isLastPage;
+                document.getElementById('first-page').disabled = isFirstPage;
+                document.getElementById('last-page').disabled = isLastPage;
+
+                // Mobile
+                document.getElementById('prev-page-mobile').disabled = isFirstPage;
+                document.getElementById('next-page-mobile').disabled = isLastPage;
+            }
+
+            async loadFilterOptions() {
+                try {
+                    const supabase = auth.supabase;
+
+                    // Fetch unique values from the internal_transfer table (top 5000 rows as sample)
+                    const { data, error } = await supabase.from('internal_transfer').select('from_warehouse_name, warehouse_name').limit(5000);
+                    if (!error && data) {
+                        const uniqueFrom = [...new Set(data.map(item => item.from_warehouse_name).filter(Boolean))].sort();
+                        this.populateDatalist('from-warehouse-list', uniqueFrom);
+
+                        const uniqueTo = [...new Set(data.map(item => item.warehouse_name).filter(Boolean))].sort();
+                        this.populateDatalist('to-warehouse-list', uniqueTo);
+                    }
+                } catch (error) {
+                    console.error('Error loading filter options:', error);
+                }
+            }
+
+            populateDatalist(listId, options) {
+                const datalist = document.getElementById(listId);
+                if (!datalist) return;
+                datalist.innerHTML = '';
+                options.forEach(opt => {
+                    const option = document.createElement('option');
+                    option.value = opt;
+                    datalist.appendChild(option);
+                });
+            }
+
+            async applyFilters() {
+                this.filters.fromWarehouse = document.getElementById('from-warehouse-filter').value.trim();
+                this.filters.toWarehouse = document.getElementById('to-warehouse-filter').value.trim();
+                this.filters.month = document.getElementById('month-filter').value.trim();
+
+                this.currentPage = 1;
+                await this.loadData();
+            }
+
+            async setSort(column) {
+                if (this.sort.column === column) {
+                    this.sort.ascending = !this.sort.ascending;
+                } else {
+                    this.sort.column = column;
+                    this.sort.ascending = true;
+                }
+
+                // Update UI icons
+                document.querySelectorAll('.sort-header').forEach(th => {
+                    th.classList.remove('active');
+                    const icon = th.querySelector('.sort-icon');
+                    if (icon) icon.textContent = '⇅';
+                });
+
+                const activeTh = document.querySelector(`.sort-header[data-sort="${column}"]`);
+                if (activeTh) {
+                    activeTh.classList.add('active');
+                    const icon = activeTh.querySelector('.sort-icon');
+                    if (icon) icon.textContent = this.sort.ascending ? '▲' : '▼';
+                }
+
+                await this.loadData();
+            }
+
+            // Helper to get date ranges
+            getMonthRanges(m) {
+                if (!m) return null;
+                const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+                const idx = months.indexOf(m);
+                if (idx === -1) return null;
+
+                const years = [2023, 2024, 2025, 2026, 2027];
+                return years.map(year => {
+                    const start = `${year}-${String(idx + 1).padStart(2, '0')}-01`;
+                    const lastDay = new Date(year, idx + 1, 0).getDate();
+                    const end = `${year}-${String(idx + 1).padStart(2, '0')}-${lastDay}`;
+                    return { start, end };
+                });
+            }
+
+            async exportData(format) {
+                try {
+                    document.getElementById('loading-spinner').classList.remove('hidden');
+
+                    const supabase = auth.supabase;
+                    let query = supabase.from('internal_transfer').select('*');
+
+                    if (this.filters.fromWarehouse) query = query.ilike('from_warehouse_name', `%${this.filters.fromWarehouse}%`);
+                    if (this.filters.toWarehouse) query = query.ilike('warehouse_name', `%${this.filters.toWarehouse}%`);
+
+                    const dateRanges = this.getMonthRanges(this.filters.month);
+                    if (dateRanges) {
+                        const orConditions = dateRanges.map(r => `and(document_date.gte.${r.start},document_date.lte.${r.end})`).join(',');
+                        query = query.or(orConditions);
+                    }
+
+                    const { data, error } = await query.order('document_date', { ascending: false });
+
+                    if (error) throw error;
+
+                    if (!data || data.length === 0) {
+                        alert('No data to export');
+                        return;
+                    }
+
+                    if (format === 'excel') {
+                        this.exportToExcel(data);
+                    } else if (format === 'pdf') {
+                        this.exportToPDF(data);
+                    }
+                } catch (error) {
+                    console.error('Export error:', error);
+                    alert('Export failed: ' + error.message);
+                } finally {
+                    document.getElementById('loading-spinner').classList.add('hidden');
+                }
+            }
+
+            exportToExcel(data) {
+                const worksheet = XLSX.utils.json_to_sheet(data);
+                const workbook = XLSX.utils.book_new();
+                XLSX.utils.book_append_sheet(workbook, worksheet, "Internal Transfer");
+                XLSX.writeFile(workbook, `Transfer_Data_${this.filters.month || 'All'}.xlsx`);
+            }
+
+            exportToPDF(data) {
+                const { jsPDF } = window.jspdf;
+                const doc = new jsPDF('l', 'mm', 'a2');
+
+                doc.text(`Internal Transfer Data - ${this.filters.month || 'All Months'}`, 14, 15);
+
+                const tableColumn = [
+                    "Doc Date", "Post Date", "Doc Num", "Item Code", "Description",
+                    "Qty", "Unit", "Price", "Total", "From Wh Code",
+                    "From Wh Name", "From Loc", "To Wh Code", "To Wh Name", "To Loc"
+                ];
+                const tableRows = data.map(row => [
+                    formatDate(row.document_date),
+                    formatDate(row.posting_date),
+                    row.document_number,
+                    row.item_code,
+                    row.item_description,
+                    formatNumber(row.quantity),
+                    row.unit,
+                    formatNumber(row.stock_price),
+                    formatNumber(row.total),
+                    row.from_warehouse_code,
+                    row.from_warehouse_name,
+                    row.from_location,
+                    row.to_warehouse_code,
+                    row.warehouse_name,
+                    row.to_location
+                ]);
+
+                doc.autoTable({
+                    head: [tableColumn],
+                    body: tableRows,
+                    startY: 20,
+                    styles: { fontSize: 7, cellPadding: 1 },
+                });
+
+                doc.save(`Transfer_Data_${this.filters.month || 'All'}.pdf`);
+            }
+        }
+
+        // Setup event listeners
+        function setupEventListeners(transferManager) {
+            // Apply filters button
+            document.getElementById('apply-filters').addEventListener('click', () => {
+                transferManager.applyFilters();
+            });
+
+            // Pagination buttons
+            document.getElementById('first-page').addEventListener('click', () => {
+                if (transferManager.currentPage > 1) {
+                    transferManager.currentPage = 1;
+                    transferManager.loadData();
+                }
+            });
+
+            document.getElementById('prev-page').addEventListener('click', () => {
+                if (transferManager.currentPage > 1) {
+                    transferManager.currentPage--;
+                    transferManager.loadData();
+                }
+            });
+
+            document.getElementById('next-page').addEventListener('click', () => {
+                const totalPages = Math.ceil(transferManager.totalRows / transferManager.rowsPerPage);
+                if (transferManager.currentPage < totalPages) {
+                    transferManager.currentPage++;
+                    transferManager.loadData();
+                }
+            });
+
+            document.getElementById('last-page').addEventListener('click', () => {
+                const totalPages = Math.ceil(transferManager.totalRows / transferManager.rowsPerPage);
+                if (transferManager.currentPage < totalPages) {
+                    transferManager.currentPage = totalPages;
+                    transferManager.loadData();
+                }
+            });
+
+            // Mobile pagination buttons
+            document.getElementById('prev-page-mobile').addEventListener('click', () => {
+                if (transferManager.currentPage > 1) {
+                    transferManager.currentPage--;
+                    transferManager.loadData();
+                }
+            });
+
+            document.getElementById('next-page-mobile').addEventListener('click', () => {
+                const totalPages = Math.ceil(transferManager.totalRows / transferManager.rowsPerPage);
+                if (transferManager.currentPage < totalPages) {
+                    transferManager.currentPage++;
+                    transferManager.loadData();
+                }
+            });
+
+            // Enter key in from warehouse filter
+            document.getElementById('from-warehouse-filter').addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    transferManager.applyFilters();
+                }
+            });
+
+            // Enter key in to warehouse filter
+            document.getElementById('to-warehouse-filter').addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    transferManager.applyFilters();
+                }
+            });
+
+            // Export buttons
+            document.getElementById('export-excel').addEventListener('click', (e) => {
+                e.preventDefault();
+                transferManager.exportData('excel');
+            });
+
+            document.getElementById('export-pdf').addEventListener('click', (e) => {
+                e.preventDefault();
+                transferManager.exportData('pdf');
+            });
+
+            // Sorting listeners
+            document.querySelectorAll('.sort-header').forEach(th => {
+                th.addEventListener('click', () => {
+                    const column = th.dataset.sort;
+                    transferManager.setSort(column);
+                });
+            });
+        }
+    </script>
+</body>
+
+</html>

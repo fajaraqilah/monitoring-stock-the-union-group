@@ -1,0 +1,37 @@
+{
+    "cleanUrls": true,
+    "trailingSlash": false,
+    "redirects": [
+        {
+            "source": "/",
+            "destination": "/login",
+            "permanent": false
+        }
+    ],
+    "rewrites": [
+        {
+            "source": "/login",
+            "destination": "/login.html"
+        },
+        {
+            "source": "/dashboard",
+            "destination": "/dashboard.html"
+        },
+        {
+            "source": "/inventory",
+            "destination": "/inventory.html"
+        },
+        {
+            "source": "/receiving",
+            "destination": "/receiving.html"
+        },
+        {
+            "source": "/internal-transfer",
+            "destination": "/internal-transfer.html"
+        },
+        {
+            "source": "/upload",
+            "destination": "/upload.html"
+        }
+    ]
+}

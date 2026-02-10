@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Inventory Management System</title>
+    <!-- Tailwind CSS (Production) -->
+    <link href="./public/css/style.css" rel="stylesheet">
+    <!-- Chart.js from local file -->
+    <script src="./public/js/chart.min.js"></script>
+    <!-- Chart.js DataLabels Plugin -->
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0"></script>
+
+    <style>
+        .chart-container {
+            position: relative;
+            height: 400px;
+            width: 100%;
+        }
+
+        /* Improve chart responsiveness */
+        .chart-wrapper {
+            min-height: 400px;
+            width: 100%;
+        }
+
+        @media (max-width: 768px) {
+            .chart-container {
+                height: 300px;
+            }
+
+            .chart-wrapper {
+                min-height: 300px;
+            }
+        }
+    </style>
+</head>
+
+<body class="bg-gray-100 min-h-screen flex">
+    <!-- Loading Spinner -->
+    <div id="loading-spinner" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-blue-500"></div>
+    </div>
+
+    <!-- Sidebar -->
+    <aside id="sidebar" class="sidebar bg-gray-800 text-white w-64 min-h-screen flex flex-col flex-shrink-0">
+        <div class="p-4 border-b border-gray-700 h-20 flex items-center shadow-md">
+            <!-- Logo and Title -->
+            <div class="sidebar-logo-container space-x-3">
+                <img src="./public/assets/UnionGroupLogo.png" alt="Logo"
+                    class="logo-img border-2 border-blue-500 shadow-sm">
+                <h1 class="text-lg font-bold menu-text whitespace-nowrap overflow-hidden">Inventory <span
+                        class="text-blue-400">System</span></h1>
+            </div>
+        </div>
+        <nav class="flex-1 p-2">
+            <ul class="space-y-1">
+                <li>
+                    <a href="dashboard.html" class="flex items-center p-2 bg-blue-600 rounded text-white">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" viewBox="0 0 20 20"
+                            fill="currentColor">
+                            <path
+                                d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z" />
+                        </svg>
+                        <span class="menu-text">Dashboard</span>
+                        <span
+                            class="tooltip absolute ml-8 px-2 py-1 bg-gray-900 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity">Dashboard</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="inventory.html" class="flex items-center p-2 text-gray-300 hover:bg-gray-700 rounded">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" viewBox="0 0 20 20"
+                            fill="currentColor">
+                            <path fill-rule="evenodd"
+                                d="M4 4a2 2 0 00-2 2v4a2 2 0 002 2V6h10a2 2 0 00-2-2H4zm2 6a2 2 0 012-2h8a2 2 0 012 2v4a2 2 0 01-2 2H8a2 2 0 01-2-2v-4zm6 4a2 2 0 100-4 2 2 0 000 4z"
+                                clip-rule="evenodd" />
+                        </svg>
+                        <span class="menu-text">Inventory</span>
+                        <span
+                            class="tooltip absolute ml-8 px-2 py-1 bg-gray-900 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity">Inventory</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="receiving.html" class="flex items-center p-2 text-gray-300 hover:bg-gray-700 rounded">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" viewBox="0 0 20 20"
+                            fill="currentColor">
+                            <path fill-rule="evenodd"
+                                d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                                clip-rule="evenodd" />
+                        </svg>
+                        <span class="menu-text">Receiving</span>
+                        <span
+                            class="tooltip absolute ml-8 px-2 py-1 bg-gray-900 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity">Receiving</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="internal-transfer.html"
+                        class="flex items-center p-2 text-gray-300 hover:bg-gray-700 rounded">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" viewBox="0 0 20 20"
+                            fill="currentColor">
+                            <path fill-rule="evenodd"
+                                d="M9.707 14.707a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 1.414L7.414 9H15a1 1 0 110 2H7.414l2.293 2.293a1 1 0 010 1.414z"
+                                clip-rule="evenodd" />
+                        </svg>
+                        <span class="menu-text">Internal Transfer</span>
+                        <span
+                            class="tooltip absolute ml-8 px-2 py-1 bg-gray-900 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity">Internal
+                            Transfer</span>
+                    </a>
+                </li>
+                <li id="admin-menu" class="hidden">
+                    <a href="upload.html" class="flex items-center p-2 text-gray-300 hover:bg-gray-700 rounded">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" viewBox="0 0 20 20"
+                            fill="currentColor">
+                            <path fill-rule="evenodd"
+                                d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z"
+                                clip-rule="evenodd" />
+                        </svg>
+                        <span class="menu-text">Upload Data</span>
+                        <span
+                            class="tooltip absolute ml-8 px-2 py-1 bg-gray-900 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity">Upload
+                            Data</span>
+                    </a>
+                </li>
+            </ul>
+        </nav>
+    </aside>
+
+    <!-- Main Content -->
+    <div class="flex-1 flex flex-col min-w-0">
+        <!-- Top Navbar -->
+        <header class="bg-white shadow-sm p-4 flex justify-between items-center">
+            <div class="flex items-center">
+                <button id="sidebar-toggle" class="mr-4 text-gray-500 focus:outline-none">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24"
+                        stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M4 6h16M4 12h16M4 18h16" />
+                    </svg>
+                </button>
+                <h2 class="text-xl font-semibold text-gray-800">Dashboard</h2>
+            </div>
+            <div class="flex items-center space-x-2 sm:space-x-4">
+                <div id="user-info" class="text-right hidden sm:block">
+                    <p id="user-name" class="text-sm font-medium text-gray-900 truncate max-w-[150px] lg:max-w-[200px]">
+                    </p>
+                    <p id="user-role" class="text-xs text-gray-500"></p>
+                </div>
+                <button id="logout-btn"
+                    class="bg-red-500 hover:bg-red-600 text-white px-3 py-2 sm:px-4 rounded text-xs sm:text-sm">
+                    Logout
+                </button>
+            </div>
+        </header>
+
+        <!-- Main Content Area -->
+        <main class="flex-1 p-6 overflow-y-auto">
+            <!-- Filters -->
+            <div class="mb-6 bg-white p-4 rounded-lg shadow-sm">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Transaction Month Filter
+                            (Receiving/Transfer)</label>
+                        <select id="transaction-month-filter"
+                            class="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <option value="">All Months</option>
+                            <option value="January">January</option>
+                            <option value="February">February</option>
+                            <option value="March">March</option>
+                            <option value="April">April</option>
+                            <option value="May">May</option>
+                            <option value="June">June</option>
+                            <option value="July">July</option>
+                            <option value="August">August</option>
+                            <option value="September">September</option>
+                            <option value="October">October</option>
+                            <option value="November">November</option>
+                            <option value="December">December</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Stock Month Filter
+                            (Stock/Inventory)</label>
+                        <select id="stock-month-filter"
+                            class="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <option value="">All Months</option>
+                            <option value="January">January</option>
+                            <option value="February">February</option>
+                            <option value="March">March</option>
+                            <option value="April">April</option>
+                            <option value="May">May</option>
+                            <option value="June">June</option>
+                            <option value="July">July</option>
+                            <option value="August">August</option>
+                            <option value="September">September</option>
+                            <option value="October">October</option>
+                            <option value="November">November</option>
+                            <option value="December">December</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Warehouse Filter</label>
+                        <input list="warehouse-list" id="warehouse-filter" placeholder="Select Warehouse..."
+                            class="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <datalist id="warehouse-list"></datalist>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Summary Cards -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6 mb-6">
+                <div class="bg-white p-4 sm:p-6 rounded-lg shadow-sm border border-gray-200">
+                    <div class="flex items-center">
+                        <div class="p-2 sm:p-3 rounded-full bg-blue-100 flex-shrink-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 sm:h-6 sm:w-6 text-blue-600"
+                                fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                            </svg>
+                        </div>
+                        <div class="ml-3 sm:ml-4 min-w-0">
+                            <h3 class="text-xs sm:text-sm font-medium text-gray-500 truncate">Total inventory stock (Rp)
+                            </h3>
+                            <p id="total-stock" class="text-lg sm:text-2xl font-semibold text-gray-900 truncate">0</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white p-4 sm:p-6 rounded-lg shadow-sm border border-gray-200">
+                    <div class="flex items-center">
+                        <div class="p-2 sm:p-3 rounded-full bg-yellow-100 flex-shrink-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 sm:h-6 sm:w-6 text-yellow-600"
+                                fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                            </svg>
+                        </div>
+                        <div class="ml-3 sm:ml-4 min-w-0">
+                            <h3 class="text-xs sm:text-sm font-medium text-gray-500 truncate">Total receiving (Rp)</h3>
+                            <p id="total-receiving" class="text-lg sm:text-2xl font-semibold text-gray-900 truncate">0
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white p-4 sm:p-6 rounded-lg shadow-sm border border-gray-200">
+                    <div class="flex items-center">
+                        <div class="p-2 sm:p-3 rounded-full bg-purple-100 flex-shrink-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 sm:h-6 sm:w-6 text-purple-600"
+                                fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+                            </svg>
+                        </div>
+                        <div class="ml-3 sm:ml-4 min-w-0">
+                            <h3 class="text-xs sm:text-sm font-medium text-gray-500 truncate">Total internal transfer
+                                (Rp)</h3>
+                            <p id="total-transfer" class="text-lg sm:text-2xl font-semibold text-gray-900 truncate">0
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Charts Section -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+                    <h3 class="text-lg font-medium text-gray-900 mb-4">Top 5 Warehouse Stock Value</h3>
+                    <div class="chart-container">
+                        <div class="chart-wrapper">
+                            <canvas id="stock-per-outlet-chart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-lg font-medium text-gray-900">Daily Receiving Value</h3>
+                        <div id="receiving-chart-nav" class="flex items-center">
+                            <select id="unit-selector"
+                                class="text-xs font-semibold bg-blue-50 border border-blue-200 text-blue-800 px-2 py-1 rounded focus:outline-none focus:ring-1 focus:ring-blue-500">
+                                <option value="">Select Unit</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="chart-container">
+                        <div class="chart-wrapper">
+                            <canvas id="receiving-by-date-chart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200 lg:col-span-2">
+                    <h3 class="text-lg font-medium text-gray-900 mb-4">Top 10 Transfer Value by Warehouse</h3>
+                    <div class="chart-container">
+                        <div class="chart-wrapper">
+                            <canvas id="transfer-by-warehouse-chart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Additional Analytics Charts -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
+                <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+                    <h3 class="text-lg font-medium text-gray-900 mb-4">Top 5 Suppliers by Value</h3>
+                    <div class="chart-container">
+                        <div class="chart-wrapper">
+                            <canvas id="top-suppliers-chart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+                    <h3 class="text-lg font-medium text-gray-900 mb-4">Stock Value Distribution</h3>
+                    <div class="chart-container">
+                        <div class="chart-wrapper">
+                            <canvas id="warehouse-utilization-chart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200 lg:col-span-2">
+                    <h3 class="text-lg font-medium text-gray-900 mb-4">Top 10 Warehouse Stock Value Detail</h3>
+                    <div class="chart-container">
+                        <div class="chart-wrapper">
+                            <canvas id="stock-value-by-warehouse-chart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Include JavaScript modules -->
+    <script type="module">
+        import { auth } from './public/js/auth.js';
+        import { Sidebar } from './public/js/sidebar.js';
+        import { ChartManager } from './public/js/charts.js';
+        import { formatNumber } from './public/js/utils.js';
+
+        // Initialize dashboard
+        document.addEventListener('DOMContentLoaded', async function () {
+            // Check authentication
+            try {
+                const isAuthenticated = await auth.requireAuth(['user', 'admin']);
+                if (!isAuthenticated) return;
+            } catch (error) {
+                console.error('Authentication check failed:', error);
+                // Redirect to login on auth failure to prevent infinite loops
+                window.location.href = 'login.html';
+                return;
+            }
+
+            // Show user info
+            const user = auth.user;
+            document.getElementById('user-name').textContent = user?.user_metadata?.full_name || user?.email || 'User';
+            document.getElementById('user-role').textContent = auth.getUserRole();
+
+            // Show admin menu if user is admin
+            if (auth.isAdmin()) {
+                document.getElementById('admin-menu').classList.remove('hidden');
+            }
+
+            // Setup logout button
+            document.getElementById('logout-btn').addEventListener('click', async function () {
+                await auth.logout();
+                window.location.href = 'login.html';
+            });
+
+            // Initialize sidebar
+            new Sidebar();
+
+            // Initialize chart manager
+            const chartManager = new ChartManager();
+
+            // Load dashboard data
+            await loadDashboardData(chartManager);
+
+            // Setup month filters
+            document.getElementById('transaction-month-filter').addEventListener('change', async function () {
+                const transactionMonth = this.value;
+                const stockMonth = document.getElementById('stock-month-filter').value;
+                const warehouseName = document.getElementById('warehouse-filter').value;
+                await loadDashboardData(chartManager, transactionMonth, stockMonth, warehouseName);
+            });
+
+            document.getElementById('stock-month-filter').addEventListener('change', async function () {
+                const stockMonth = this.value;
+                const transactionMonth = document.getElementById('transaction-month-filter').value;
+                const warehouseName = document.getElementById('warehouse-filter').value;
+                await loadDashboardData(chartManager, transactionMonth, stockMonth, warehouseName);
+            });
+
+            document.getElementById('warehouse-filter').addEventListener('change', async function () {
+                const warehouseName = this.value;
+                const transactionMonth = document.getElementById('transaction-month-filter').value;
+                const stockMonth = document.getElementById('stock-month-filter').value;
+                await loadDashboardData(chartManager, transactionMonth, stockMonth, warehouseName);
+            });
+        });
+
+        // Function to load dashboard data
+        async function loadDashboardData(chartManager, transactionMonth = null, stockMonth = null, warehouseName = null) {
+            try {
+                // Show loading spinner
+                document.getElementById('loading-spinner').classList.remove('hidden');
+
+                // Load summary cards
+                await loadSummaryCards(transactionMonth, stockMonth, warehouseName);
+
+                // Populate warehouse filter if empty
+                const warehouseList = document.getElementById('warehouse-list');
+                if (warehouseList.children.length === 0) {
+                    await populateWarehouseFilter();
+                }
+
+                // Load charts
+                await chartManager.createStockPerOutletChart(stockMonth, warehouseName);
+                await chartManager.createReceivingByDateChart(transactionMonth, warehouseName);
+                await chartManager.createTransferByWarehouseChart(transactionMonth, warehouseName);
+                await chartManager.createTopSuppliersChart(transactionMonth, warehouseName);
+                await chartManager.createWarehouseUtilizationChart(stockMonth, warehouseName);
+                await chartManager.createStockValueBywarehouseChart(stockMonth, warehouseName);
+            } catch (error) {
+                console.error('Error loading dashboard data:', error);
+            } finally {
+                // Hide loading spinner
+                document.getElementById('loading-spinner').classList.add('hidden');
+            }
+        }
+
+        async function populateWarehouseFilter() {
+            const supabase = auth.supabase;
+            // Get unique warehouse names from various summary views
+            try {
+                const { data, error } = await supabase.from('stock_warehouse_value_summary').select('warehouse_name');
+                if (!error && data) {
+                    const warehouses = [...new Set(data.map(item => item.warehouse_name).filter(Boolean))].sort();
+                    const list = document.getElementById('warehouse-list');
+                    warehouses.forEach(w => {
+                        const opt = document.createElement('option');
+                        opt.value = w;
+                        list.appendChild(opt);
+                    });
+                }
+            } catch (e) {
+                console.error('Error populating warehouse filter:', e);
+            }
+        }
+
+        // Function to load summary cards
+        async function loadSummaryCards(transactionMonth, stockMonth, warehouseName) {
+            const supabase = auth.supabase;
+
+            // Helper to get date ranges for a month across multiple years
+            const getMonthRanges = (m) => {
+                if (!m || m === "All") return null;
+                const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+                const idx = months.indexOf(m);
+                if (idx === -1) return null;
+
+                const years = [2023, 2024, 2025, 2026, 2027];
+                return years.map(year => {
+                    const start = `${year}-${String(idx + 1).padStart(2, '0')}-01`;
+                    const lastDay = new Date(year, idx + 1, 0).getDate();
+                    const end = `${year}-${String(idx + 1).padStart(2, '0')}-${lastDay}`;
+                    return { start, end };
+                });
+            };
+
+            const dataRangesTransaction = getMonthRanges(transactionMonth);
+            const DATA_LIMIT = 5000;
+
+            try {
+                // Total Stock (stock_warehouse_value_summary)
+                let stockQuery = supabase.from('stock_warehouse_value_summary').select('total_value, month, warehouse_name').limit(DATA_LIMIT);
+                if (stockMonth && stockMonth !== "All") {
+                    stockQuery = stockQuery.ilike('month', stockMonth);
+                }
+                if (warehouseName) {
+                    stockQuery = stockQuery.ilike('warehouse_name', warehouseName);
+                }
+                const { data: stockData, error: stockError } = await stockQuery;
+                if (!stockError && stockData) {
+                    const totalStock = stockData.reduce((sum, item) => sum + (parseFloat(item.total_value) || 0), 0);
+                    document.getElementById('total-stock').textContent = formatNumber(totalStock);
+                }
+
+                // Total Receiving (receiving_daily_summary)
+                let receivingQuery = supabase.from('receiving_daily_summary').select('total_value, receiving_date, warehouse_name').limit(DATA_LIMIT);
+                if (transactionMonth && transactionMonth !== "All" && dataRangesTransaction) {
+                    const orFilters = dataRangesTransaction.map(range =>
+                        `and(receiving_date.gte.${range.start},receiving_date.lte.${range.end})`
+                    ).join(',');
+                    receivingQuery = receivingQuery.or(orFilters);
+                }
+                if (warehouseName) {
+                    receivingQuery = receivingQuery.ilike('warehouse_name', warehouseName);
+                }
+                const { data: receivingData, error: receivingError } = await receivingQuery;
+                if (!receivingError && receivingData) {
+                    const totalReceiving = receivingData.reduce((sum, item) => sum + (parseFloat(item.total_value) || 0), 0);
+                    document.getElementById('total-receiving').textContent = formatNumber(totalReceiving);
+                }
+
+                // Total Transfer (transfer_warehouse_summary)
+                let transferQuery = supabase.from('transfer_warehouse_summary').select('total_value, document_date, warehouse_name').limit(DATA_LIMIT);
+                if (transactionMonth && transactionMonth !== "All" && dataRangesTransaction) {
+                    const orFilters = dataRangesTransaction.map(range =>
+                        `and(document_date.gte.${range.start},document_date.lte.${range.end})`
+                    ).join(',');
+                    transferQuery = transferQuery.or(orFilters);
+                }
+                if (warehouseName) {
+                    transferQuery = transferQuery.ilike('warehouse_name', warehouseName);
+                }
+                const { data: transferData, error: transferError } = await transferQuery;
+                if (!transferError && transferData) {
+                    const totalTransfer = transferData.reduce((sum, item) => sum + (parseFloat(item.total_value) || 0), 0);
+                    document.getElementById('total-transfer').textContent = formatNumber(totalTransfer);
+                }
+            } catch (error) {
+                console.error('Error loading summary cards:', error);
+            }
+        }
+    </script>
+</body>
+
+</html>

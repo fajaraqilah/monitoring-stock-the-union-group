@@ -1,0 +1,751 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Upload Data - Inventory Management System</title>
+    <!-- Tailwind CSS (Production) -->
+    <link href="./public/css/style.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+    <style>
+        .preview-table {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+    </style>
+</head>
+
+<body class="bg-gray-100 min-h-screen flex">
+    <!-- Loading Spinner -->
+    <div id="loading-spinner" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-blue-500"></div>
+    </div>
+
+    <!-- Sidebar -->
+    <aside id="sidebar" class="sidebar bg-gray-800 text-white w-64 min-h-screen flex flex-col flex-shrink-0">
+        <div class="p-4 border-b border-gray-700 h-20 flex items-center shadow-md">
+            <!-- Logo and Title -->
+            <div class="sidebar-logo-container space-x-3">
+                <img src="./public/assets/UnionGroupLogo.png" alt="Logo"
+                    class="logo-img border-2 border-blue-500 shadow-sm">
+                <h1 class="text-lg font-bold menu-text whitespace-nowrap overflow-hidden">Inventory <span
+                        class="text-blue-400">System</span></h1>
+            </div>
+        </div>
+        <nav class="flex-1 p-2">
+            <ul class="space-y-1">
+                <li>
+                    <a href="dashboard.html" class="flex items-center p-2 text-gray-300 hover:bg-gray-700 rounded">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" viewBox="0 0 20 20"
+                            fill="currentColor">
+                            <path
+                                d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z" />
+                        </svg>
+                        <span class="menu-text">Dashboard</span>
+                        <span
+                            class="tooltip absolute ml-8 px-2 py-1 bg-gray-900 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity">Dashboard</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="inventory.html" class="flex items-center p-2 text-gray-300 hover:bg-gray-700 rounded">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" viewBox="0 0 20 20"
+                            fill="currentColor">
+                            <path fill-rule="evenodd"
+                                d="M4 4a2 2 0 00-2 2v4a2 2 0 002 2V6h10a2 2 0 00-2-2H4zm2 6a2 2 0 012-2h8a2 2 0 012 2v4a2 2 0 01-2 2H8a2 2 0 01-2-2v-4zm6 4a2 2 0 100-4 2 2 0 000 4z"
+                                clip-rule="evenodd" />
+                        </svg>
+                        <span class="menu-text">Inventory</span>
+                        <span
+                            class="tooltip absolute ml-8 px-2 py-1 bg-gray-900 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity">Inventory</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="receiving.html" class="flex items-center p-2 text-gray-300 hover:bg-gray-700 rounded">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" viewBox="0 0 20 20"
+                            fill="currentColor">
+                            <path fill-rule="evenodd"
+                                d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                                clip-rule="evenodd" />
+                        </svg>
+                        <span class="menu-text">Receiving</span>
+                        <span
+                            class="tooltip absolute ml-8 px-2 py-1 bg-gray-900 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity">Receiving</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="internal-transfer.html"
+                        class="flex items-center p-2 text-gray-300 hover:bg-gray-700 rounded">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" viewBox="0 0 20 20"
+                            fill="currentColor">
+                            <path fill-rule="evenodd"
+                                d="M9.707 14.707a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 1.414L7.414 9H15a1 1 0 110 2H7.414l2.293 2.293a1 1 0 010 1.414z"
+                                clip-rule="evenodd" />
+                        </svg>
+                        <span class="menu-text">Internal Transfer</span>
+                        <span
+                            class="tooltip absolute ml-8 px-2 py-1 bg-gray-900 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity">Internal
+                            Transfer</span>
+                    </a>
+                </li>
+                <li id="admin-menu">
+                    <a href="upload.html" class="flex items-center p-2 bg-blue-600 rounded text-white">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" viewBox="0 0 20 20"
+                            fill="currentColor">
+                            <path fill-rule="evenodd"
+                                d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z"
+                                clip-rule="evenodd" />
+                        </svg>
+                        <span class="menu-text">Upload Data</span>
+                        <span
+                            class="tooltip absolute ml-8 px-2 py-1 bg-gray-900 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity">Upload
+                            Data</span>
+                    </a>
+                </li>
+            </ul>
+        </nav>
+    </aside>
+
+    <!-- Main Content -->
+    <div class="flex-1 flex flex-col min-w-0">
+        <!-- Top Navbar -->
+        <header class="bg-white shadow-sm p-4 flex justify-between items-center">
+            <div class="flex items-center">
+                <button id="sidebar-toggle" class="mr-4 text-gray-500 focus:outline-none">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24"
+                        stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M4 6h16M4 12h16M4 18h16" />
+                    </svg>
+                </button>
+                <h2 class="text-xl font-semibold text-gray-800">Upload Data</h2>
+            </div>
+            <div class="flex items-center space-x-2 sm:space-x-4">
+                <div id="user-info" class="text-right hidden sm:block">
+                    <p id="user-name" class="text-sm font-medium text-gray-900 truncate max-w-[150px] lg:max-w-[200px]">
+                    </p>
+                    <p id="user-role" class="text-xs text-gray-500"></p>
+                </div>
+                <button id="logout-btn"
+                    class="bg-red-500 hover:bg-red-600 text-white px-3 py-2 sm:px-4 rounded text-xs sm:text-sm">
+                    Logout
+                </button>
+            </div>
+        </header>
+
+        <!-- Main Content Area -->
+        <main class="flex-1 p-6 overflow-y-auto">
+            <!-- Upload Form -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+                <!-- Upload Section -->
+                <div class="lg:col-span-2 bg-white p-6 rounded-lg shadow-sm">
+                    <h3 class="text-lg font-medium text-gray-900 mb-4">Upload CSV File</h3>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Select Target Table</label>
+                            <select id="target-table"
+                                class="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                <option value="">-- Select Table --</option>
+                                <option value="inventory_stock">Inventory Stock</option>
+                                <option value="receiving">Receiving</option>
+                                <option value="internal_transfer">Internal Transfer</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Select CSV File</label>
+                            <input type="file" id="excel-file" accept=".csv"
+                                class="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <p class="text-xs text-gray-500 mt-1">Max file size: 50 MB. Format: CSV</p>
+                        </div>
+                    </div>
+
+                    <div class="mt-4 flex items-center justify-between">
+                        <div class="flex items-center">
+                            <input type="checkbox" id="overwrite-data"
+                                class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded">
+                            <label for="overwrite-data" class="ml-2 block text-sm text-gray-700">
+                                Delete existing data for selected month before upload
+                            </label>
+                        </div>
+                        <button id="preview-btn"
+                            class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded text-sm disabled:opacity-50"
+                            disabled>
+                            Preview Data
+                        </button>
+                    </div>
+
+                    <div class="mt-8 border-t pt-6">
+                        <h4 class="text-sm font-semibold text-gray-700 mb-3">Expected CSV Columns:</h4>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                            <div>
+                                <h5 class="text-xs font-bold text-blue-600 mb-1 uppercase">Inventory Stock</h5>
+                                <ul class="text-[10px] text-gray-600 list-disc list-inside space-y-1">
+                                    <li>Item Code, Item Name</li>
+                                    <li>Item Group, Item Sub Group</li>
+                                    <li>Warehouse Code, Warehouse Name</li>
+                                    <li>Bin, Stock, Unit</li>
+                                    <li>Item Cost, Total</li>
+                                    <li>Area, Brand, Outlet, Month</li>
+                                </ul>
+                            </div>
+                            <div>
+                                <h5 class="text-xs font-bold text-green-600 mb-1 uppercase">Receiving</h5>
+                                <ul class="text-[10px] text-gray-600 list-disc list-inside space-y-1">
+                                    <li>GRPO, PO, Receiving Date</li>
+                                    <li>Item Code, Item Name, Item Group</li>
+                                    <li>Supplier, Brand, Quantity, Unit</li>
+                                    <li>Unit Price, Total, Due Date</li>
+                                    <li>Location, Warehouse Code, Warehouse Name</li>
+                                    <li>Remarks</li>
+                                </ul>
+                            </div>
+                            <div>
+                                <h5 class="text-xs font-bold text-purple-600 mb-1 uppercase">Internal Transfer</h5>
+                                <ul class="text-[10px] text-gray-600 list-disc list-inside space-y-1">
+                                    <li>Document Number, Document Date</li>
+                                    <li>Posting Date, Item Code, Description</li>
+                                    <li>Quantity, Unit, Stock Price, Total</li>
+                                    <li>From Warehouse Code, From Warehouse Name</li>
+                                    <li>To Warehouse Code, Warehouse Name</li>
+                                    <li>Remarks</li>
+                                </ul>
+                            </div>
+                        </div>
+                        <p class="text-[10px] text-gray-400 mt-4 italic">* Headers are auto-normalized (spaces to
+                            underscores, lowercase). Dates should be YYYY-MM-DD.</p>
+                    </div>
+                </div>
+
+                <!-- Delete Section -->
+                <div class="bg-white p-6 rounded-lg shadow-sm border border-red-100">
+                    <h3 class="text-lg font-medium text-red-600 mb-4 flex items-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20"
+                            fill="currentColor">
+                            <path fill-rule="evenodd"
+                                d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z"
+                                clip-rule="evenodd" />
+                        </svg>
+                        Manual Delete
+                    </h3>
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Select Table</label>
+                            <select id="delete-target-table"
+                                class="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-500">
+                                <option value="">-- Select Table --</option>
+                                <option value="inventory_stock">Inventory Stock</option>
+                                <option value="receiving">Receiving</option>
+                                <option value="internal_transfer">Internal Transfer</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Select Month</label>
+                            <select id="delete-month"
+                                class="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-500">
+                                <option value="">-- All Months --</option>
+                                <option value="January">January</option>
+                                <option value="February">February</option>
+                                <option value="March">March</option>
+                                <option value="April">April</option>
+                                <option value="May">May</option>
+                                <option value="June">June</option>
+                                <option value="July">July</option>
+                                <option value="August">August</option>
+                                <option value="September">September</option>
+                                <option value="October">October</option>
+                                <option value="November">November</option>
+                                <option value="December">December</option>
+                            </select>
+                        </div>
+                        <div class="pt-2">
+                            <button id="manual-delete-btn"
+                                class="w-full bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded text-sm font-medium transition-colors">
+                                Delete Selected Data
+                            </button>
+                        </div>
+                        <p class="text-xs text-gray-500 italic">
+                            * This will permanently delete data for the selected period. Proceed with caution.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Preview Section -->
+            <div id="preview-section" class="hidden bg-white p-6 rounded-lg shadow-sm">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-lg font-medium text-gray-900">Data Preview</h3>
+                    <button id="close-preview" class="text-gray-500 hover:text-gray-700">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd"
+                                d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
+                                clip-rule="evenodd" />
+                        </svg>
+                    </button>
+                </div>
+
+                <div id="preview-content">
+                    <div class="preview-table overflow-x-auto">
+                        <table id="preview-table" class="min-w-full divide-y divide-gray-200">
+                            <thead id="preview-thead" class="bg-gray-50">
+                                <!-- Headers will be populated by JavaScript -->
+                            </thead>
+                            <tbody id="preview-tbody" class="bg-white divide-y divide-gray-200">
+                                <!-- Rows will be populated by JavaScript -->
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="mt-6 flex justify-end space-x-3">
+                        <button id="cancel-upload"
+                            class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded text-sm">
+                            Cancel
+                        </button>
+                        <button id="confirm-upload"
+                            class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded text-sm">
+                            Confirm Upload
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Include JavaScript modules -->
+    <script type="module">
+        import { auth } from './public/js/auth.js';
+        import { Sidebar } from './public/js/sidebar.js';
+        import { showToast } from './public/js/utils.js';
+
+        // Initialize upload page
+        document.addEventListener('DOMContentLoaded', async function () {
+            // Check authentication and admin role
+            try {
+                const isAuthenticated = await auth.requireAuth(['admin']);
+                if (!isAuthenticated) return;
+            } catch (error) {
+                console.error('Authentication check failed:', error);
+                // Redirect to login on auth failure to prevent infinite loops
+                window.location.href = 'login.html';
+                return;
+            }
+
+            // Check if user is admin
+            if (!auth.isAdmin()) {
+                window.location.href = 'dashboard.html';
+                return;
+            }
+
+            // Show user info
+            const user = auth.user;
+            document.getElementById('user-name').textContent = user?.user_metadata?.full_name || user?.email || 'User';
+            document.getElementById('user-role').textContent = auth.getUserRole();
+
+            // Show admin menu
+            document.getElementById('admin-menu').classList.remove('hidden');
+
+            // Setup logout button
+            document.getElementById('logout-btn').addEventListener('click', async function () {
+                await auth.logout();
+                window.location.href = 'login.html';
+            });
+
+            // Initialize sidebar
+            new Sidebar();
+
+            // Initialize upload manager
+            const uploadManager = new UploadManager();
+
+            // Setup event listeners
+            setupEventListeners(uploadManager);
+        });
+
+        // Upload Manager class
+        class UploadManager {
+            constructor() {
+                this.selectedFile = null;
+                this.targetTable = '';
+                this.parsedData = [];
+                this.headers = [];
+            }
+
+            async previewFile() {
+                // Validate inputs
+                if (!this.targetTable) {
+                    showToast('Please select a target table', 'error');
+                    return;
+                }
+
+                if (!this.selectedFile) {
+                    showToast('Please select a CSV file', 'error');
+                    return;
+                }
+
+                // Validate file size (50MB)
+                const MAX_SIZE = 50 * 1024 * 1024; // 50MB
+                if (this.selectedFile.size > MAX_SIZE) {
+                    showToast('File size exceeds 50MB limit', 'error');
+                    return;
+                }
+
+                // Validate file extension
+                if (!this.selectedFile.name.toLowerCase().endsWith('.csv')) {
+                    showToast('Only CSV files are allowed', 'error');
+                    return;
+                }
+
+                try {
+                    // Show loading spinner
+                    document.getElementById('loading-spinner').classList.remove('hidden');
+
+                    // Parse CSV file
+                    this.parsedData = await this.parseCsvFile(this.selectedFile);
+
+                    if (this.parsedData.length === 0) {
+                        showToast('No data found in the file', 'error');
+                        return;
+                    }
+
+                    // Extract headers
+                    this.headers = Object.keys(this.parsedData[0]);
+
+                    // Render preview
+                    this.renderPreview();
+
+                    // Show preview section
+                    document.getElementById('preview-section').classList.remove('hidden');
+                } catch (error) {
+                    console.error('Error parsing file:', error);
+                    showToast('Error parsing file: ' + error.message, 'error');
+                } finally {
+                    // Hide loading spinner
+                    document.getElementById('loading-spinner').classList.add('hidden');
+                }
+            }
+
+            async parseCsvFile(file) {
+                // Use global XLSX library
+
+                return new Promise((resolve, reject) => {
+                    const reader = new FileReader();
+
+                    reader.onload = (e) => {
+                        try {
+                            const data = new Uint8Array(e.target.result);
+                            // Explicitly read as CSV if needed, but 'read' auto-detects
+                            const workbook = XLSX.read(data, { type: 'array' });
+
+                            // Get first worksheet
+                            const firstSheetName = workbook.SheetNames[0];
+                            const worksheet = workbook.Sheets[firstSheetName];
+
+                            // Convert to JSON
+                            const jsonData = XLSX.utils.sheet_to_json(worksheet);
+
+                            resolve(jsonData);
+                        } catch (error) {
+                            reject(error);
+                        }
+                    };
+
+                    reader.onerror = () => {
+                        reject(new Error('Failed to read file'));
+                    };
+
+                    reader.readAsArrayBuffer(file);
+                });
+            }
+
+            renderPreview() {
+                // Clear existing content
+                document.getElementById('preview-thead').innerHTML = '';
+                document.getElementById('preview-tbody').innerHTML = '';
+
+                // Create header row
+                const headerRow = document.createElement('tr');
+
+                this.headers.forEach(header => {
+                    const th = document.createElement('th');
+                    th.className = 'px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider';
+                    th.textContent = header;
+                    headerRow.appendChild(th);
+                });
+
+                document.getElementById('preview-thead').appendChild(headerRow);
+
+                // Create data rows (first 10 rows for preview)
+                const maxRows = Math.min(this.parsedData.length, 10);
+
+                for (let i = 0; i < maxRows; i++) {
+                    const row = this.parsedData[i];
+                    const tr = document.createElement('tr');
+
+                    this.headers.forEach(header => {
+                        const td = document.createElement('td');
+                        td.className = 'px-6 py-4 whitespace-nowrap text-sm text-gray-900';
+                        td.textContent = row[header] || '';
+                        tr.appendChild(td);
+                    });
+
+                    document.getElementById('preview-tbody').appendChild(tr);
+                }
+            }
+
+            async confirmUpload() {
+                if (this.parsedData.length === 0) {
+                    showToast('No data to upload', 'error');
+                    return;
+                }
+
+                const overwrite = document.getElementById('overwrite-data').checked;
+
+                try {
+                    // Show loading spinner
+                    document.getElementById('loading-spinner').classList.remove('hidden');
+
+                    // Prepare data for upload and check for months
+                    const monthsFound = new Set();
+                    const uploadData = this.parsedData.map(row => {
+                        const newRow = {};
+
+                        // Map headers to expected column names based on target table
+                        for (const [header, value] of Object.entries(row)) {
+                            // Convert header to lowercase and replace spaces with underscores for matching
+                            let normalizedHeader = header.toLowerCase().replace(/\s+/g, '_');
+
+                            // Specific mappings for cases where auto-normalization isn't enough
+                            if (this.targetTable === 'internal_transfer') {
+                                if (normalizedHeader === 'to_warehouse_name' || normalizedHeader === 'warehouse') {
+                                    normalizedHeader = 'warehouse_name';
+                                }
+                            }
+
+                            newRow[normalizedHeader] = value;
+
+                            // Track months found in data
+                            if (normalizedHeader === 'month') {
+                                monthsFound.add(value);
+                            } else if (normalizedHeader === 'receiving_date' || normalizedHeader === 'document_date' || normalizedHeader === 'posting_date') {
+                                const m = this.getMonthFromDate(value);
+                                if (m) monthsFound.add(m);
+                            }
+                        }
+
+                        return newRow;
+                    });
+
+                    const supabase = auth.supabase;
+
+                    // Handle Overwrite Logic
+                    if (overwrite) {
+                        if (monthsFound.size === 0) {
+                            const proceed = confirm('No month information found in data. Overwrite will delete ALL data in the target table. Proceed?');
+                            if (!proceed) {
+                                document.getElementById('loading-spinner').classList.add('hidden');
+                                return;
+                            }
+                            await supabase.from(this.targetTable).delete().neq('id', '00000000-0000-0000-0000-000000000000'); // Delete all
+                        } else {
+                            const monthsArray = Array.from(monthsFound);
+                            const monthsStr = monthsArray.join(', ');
+                            const proceed = confirm(`System will delete existing data for: ${monthsStr} from ${this.targetTable} before uploading. Proceed?`);
+                            if (!proceed) {
+                                document.getElementById('loading-spinner').classList.add('hidden');
+                                return;
+                            }
+
+                            for (const m of monthsArray) {
+                                if (this.targetTable === 'inventory_stock') {
+                                    await supabase.from(this.targetTable).delete().eq('month', m);
+                                } else if (this.targetTable === 'receiving') {
+                                    // For receiving we need to match via date ranges or month column if it exists
+                                    // Let's assume we use date range based on month name for safety
+                                    const ranges = this.getMonthRanges(m);
+                                    if (ranges) {
+                                        for (const r of ranges) {
+                                            await supabase.from(this.targetTable).delete().gte('receiving_date', r.start).lte('receiving_date', r.end);
+                                        }
+                                    }
+                                } else if (this.targetTable === 'internal_transfer') {
+                                    const ranges = this.getMonthRanges(m);
+                                    if (ranges) {
+                                        for (const r of ranges) {
+                                            await supabase.from(this.targetTable).delete().gte('document_date', r.start).lte('document_date', r.end);
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    // Insert data into Supabase
+                    // Split into chunks if data is large to avoid payload limits
+                    const chunkSize = 1000;
+                    for (let i = 0; i < uploadData.length; i += chunkSize) {
+                        const chunk = uploadData.slice(i, i + chunkSize);
+                        const { error } = await supabase
+                            .from(this.targetTable)
+                            .insert(chunk);
+
+                        if (error) throw error;
+                    }
+
+                    showToast(`Successfully uploaded ${uploadData.length} records to ${this.targetTable}`, 'success');
+
+                    // Reset form
+                    this.resetForm();
+                } catch (error) {
+                    console.error('Error uploading data:', error);
+                    showToast('Error uploading data: ' + error.message, 'error');
+                } finally {
+                    // Hide loading spinner
+                    document.getElementById('loading-spinner').classList.add('hidden');
+                }
+            }
+
+            getMonthFromDate(dateStr) {
+                if (!dateStr) return null;
+                const date = new Date(dateStr);
+                if (isNaN(date.getTime())) return null;
+                const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+                return months[date.getMonth()];
+            }
+
+            getMonthRanges(m) {
+                if (!m) return null;
+                const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+                const idx = months.indexOf(m);
+                if (idx === -1) return null;
+
+                const years = [2024, 2025, 2026]; // Relevant years
+                return years.map(year => {
+                    const start = `${year}-${String(idx + 1).padStart(2, '0')}-01`;
+                    const lastDay = new Date(year, idx + 1, 0).getDate();
+                    const end = `${year}-${String(idx + 1).padStart(2, '0')}-${lastDay}`;
+                    return { start, end };
+                });
+            }
+
+            async manualDelete() {
+                const table = document.getElementById('delete-target-table').value;
+                const month = document.getElementById('delete-month').value;
+
+                if (!table) {
+                    showToast('Please select a table to delete from', 'error');
+                    return;
+                }
+
+                const confirmMsg = month
+                    ? `Are you sure you want to delete ALL data for ${month} from ${table}? This action cannot be undone.`
+                    : `Are you sure you want to delete ALL data from ${table}? This action cannot be undone.`;
+
+                if (!confirm(confirmMsg)) return;
+
+                try {
+                    document.getElementById('loading-spinner').classList.remove('hidden');
+                    const supabase = auth.supabase;
+                    let query = supabase.from(table).delete();
+
+                    if (month) {
+                        if (table === 'inventory_stock') {
+                            query = query.eq('month', month);
+                        } else if (table === 'receiving') {
+                            const ranges = this.getMonthRanges(month);
+                            if (ranges) {
+                                // PostgreSQL delete with multiple OR conditions is tricky with Supabase JS
+                                // We'll do it sequentially for each year for simplicity and safety
+                                for (const r of ranges) {
+                                    await supabase.from(table).delete().gte('receiving_date', r.start).lte('receiving_date', r.end);
+                                }
+                                showToast(`Deleted records for ${month} from ${table}`, 'success');
+                                return;
+                            }
+                        } else if (table === 'internal_transfer') {
+                            const ranges = this.getMonthRanges(month);
+                            if (ranges) {
+                                for (const r of ranges) {
+                                    await supabase.from(table).delete().gte('document_date', r.start).lte('document_date', r.end);
+                                }
+                                showToast(`Deleted records for ${month} from ${table}`, 'success');
+                                return;
+                            }
+                        }
+                    } else {
+                        // Delete all (using a condition that's always true for modern Supabase delete requirements)
+                        query = query.neq('item_code', 'dummy_non_existent_value');
+                    }
+
+                    const { error } = await query;
+                    if (error) throw error;
+
+                    showToast(`Successfully deleted records from ${table}`, 'success');
+                } catch (error) {
+                    console.error('Delete error:', error);
+                    showToast('Error deleting data: ' + error.message, 'error');
+                } finally {
+                    document.getElementById('loading-spinner').classList.add('hidden');
+                }
+            }
+
+            resetForm() {
+                document.getElementById('target-table').value = '';
+                document.getElementById('excel-file').value = '';
+                document.getElementById('preview-section').classList.add('hidden');
+                this.selectedFile = null;
+                this.targetTable = '';
+                this.parsedData = [];
+                this.headers = [];
+            }
+        }
+
+        // Setup event listeners
+        function setupEventListeners(uploadManager) {
+            // Target table selection
+            document.getElementById('target-table').addEventListener('change', function () {
+                uploadManager.targetTable = this.value;
+
+                // Enable preview button if both table and file are selected
+                const previewBtn = document.getElementById('preview-btn');
+                previewBtn.disabled = !(uploadManager.targetTable && uploadManager.selectedFile);
+            });
+
+            // File selection
+            document.getElementById('excel-file').addEventListener('change', function () {
+                uploadManager.selectedFile = this.files[0];
+
+                // Enable preview button if both table and file are selected
+                const previewBtn = document.getElementById('preview-btn');
+                previewBtn.disabled = !(uploadManager.targetTable && uploadManager.selectedFile);
+            });
+
+            // Preview button
+            document.getElementById('preview-btn').addEventListener('click', () => {
+                uploadManager.previewFile();
+            });
+
+            // Close preview
+            document.getElementById('close-preview').addEventListener('click', () => {
+                document.getElementById('preview-section').classList.add('hidden');
+            });
+
+            // Cancel upload
+            document.getElementById('cancel-upload').addEventListener('click', () => {
+                document.getElementById('preview-section').classList.add('hidden');
+            });
+
+            // Confirm upload
+            document.getElementById('confirm-upload').addEventListener('click', () => {
+                uploadManager.confirmUpload();
+            });
+
+            // Manual delete
+            document.getElementById('manual-delete-btn').addEventListener('click', () => {
+                uploadManager.manualDelete();
+            });
+        }
+    </script>
+</body>
+
+</html>
