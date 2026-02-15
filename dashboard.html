@@ -5,6 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard - Inventory Management System</title>
+    <link rel="icon" type="image/png" href="./public/assets/UnionGroupLogo.png">
     <!-- Tailwind CSS (Production) -->
     <link href="./public/css/style.css" rel="stylesheet">
     <!-- Chart.js from local file -->
@@ -139,7 +140,9 @@
                             d="M4 6h16M4 12h16M4 18h16" />
                     </svg>
                 </button>
-                <h2 class="text-xl font-semibold text-gray-800">Dashboard</h2>
+                <div class="flex items-center space-x-2">
+                    <h2 class="text-xl font-semibold text-gray-800">Dashboard</h2>
+                </div>
             </div>
             <div class="flex items-center space-x-2 sm:space-x-4">
                 <div id="user-info" class="text-right hidden sm:block">
@@ -159,52 +162,21 @@
             <!-- Filters -->
             <div class="mb-6 bg-white p-4 rounded-lg shadow-sm">
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <!-- Date Filter -->
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Transaction Month Filter
-                            (Receiving/Transfer)</label>
-                        <select id="transaction-month-filter"
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Select Date</label>
+                        <input type="date" id="date-filter"
                             class="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
-                            <option value="">All Months</option>
-                            <option value="January">January</option>
-                            <option value="February">February</option>
-                            <option value="March">March</option>
-                            <option value="April">April</option>
-                            <option value="May">May</option>
-                            <option value="June">June</option>
-                            <option value="July">July</option>
-                            <option value="August">August</option>
-                            <option value="September">September</option>
-                            <option value="October">October</option>
-                            <option value="November">November</option>
-                            <option value="December">December</option>
-                        </select>
                     </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Stock Month Filter
-                            (Stock/Inventory)</label>
-                        <select id="stock-month-filter"
-                            class="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
-                            <option value="">All Months</option>
-                            <option value="January">January</option>
-                            <option value="February">February</option>
-                            <option value="March">March</option>
-                            <option value="April">April</option>
-                            <option value="May">May</option>
-                            <option value="June">June</option>
-                            <option value="July">July</option>
-                            <option value="August">August</option>
-                            <option value="September">September</option>
-                            <option value="October">October</option>
-                            <option value="November">November</option>
-                            <option value="December">December</option>
-                        </select>
-                    </div>
+
+                    <!-- Warehouse Filter -->
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Warehouse Filter</label>
                         <input list="warehouse-list" id="warehouse-filter" placeholder="Select Warehouse..."
                             class="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
                         <datalist id="warehouse-list"></datalist>
                     </div>
+
                 </div>
             </div>
 
@@ -263,7 +235,194 @@
                 </div>
             </div>
 
+            <!-- DSS Insights Section -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+                <!-- ABC Analysis Card -->
+                <div class="bg-white p-6 rounded-lg shadow-sm border border-blue-100 flex flex-col">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-lg font-bold text-gray-800">ABC Analysis (Pareto)</h3>
+                        <span class="px-2 py-1 bg-blue-100 text-blue-700 text-xs font-bold rounded">Value Based</span>
+                    </div>
+                    <div class="space-y-4 flex-1">
+                        <div id="abc-a-card"
+                            class="flex items-center justify-between p-3 bg-red-50 rounded-lg border border-red-100 cursor-pointer hover:bg-red-100 transition-colors group">
+                            <div>
+                                <p class="text-xs font-bold text-red-700 uppercase flex items-center">Category A (Vital)
+                                    <svg class="w-3 h-3 ml-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                                        fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z">
+                                        </path>
+                                    </svg>
+                                </p>
+                                <p id="abc-a-count" class="text-xl font-bold text-red-800">0 Items</p>
+                            </div>
+                            <div class="text-right">
+                                <p id="abc-a-value" class="text-[10px] text-red-600">80% Total Value</p>
+                            </div>
+                        </div>
+                        <div id="abc-b-card"
+                            class="flex items-center justify-between p-3 bg-yellow-50 rounded-lg border border-yellow-100 cursor-pointer hover:bg-yellow-100 transition-colors group">
+                            <div>
+                                <p class="text-xs font-bold text-yellow-700 uppercase flex items-center">Category B
+                                    (Essential) <svg
+                                        class="w-3 h-3 ml-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                                        fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z">
+                                        </path>
+                                    </svg></p>
+                                <p id="abc-b-count" class="text-xl font-bold text-yellow-800">0 Items</p>
+                            </div>
+                            <div class="text-right">
+                                <p id="abc-b-value" class="text-[10px] text-yellow-600">15% Total Value</p>
+                            </div>
+                        </div>
+                        <div id="abc-c-card"
+                            class="flex items-center justify-between p-3 bg-green-50 rounded-lg border border-green-100 cursor-pointer hover:bg-green-100 transition-colors group">
+                            <div>
+                                <p class="text-xs font-bold text-green-700 uppercase flex items-center">Category C
+                                    (Auxiliary) <svg
+                                        class="w-3 h-3 ml-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                                        fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z">
+                                        </path>
+                                    </svg></p>
+                                <p id="abc-c-count" class="text-xl font-bold text-green-800">0 Items</p>
+                            </div>
+                            <div class="text-right">
+                                <p id="abc-c-value" class="text-[10px] text-green-600">5% Total Value</p>
+                            </div>
+                        </div>
+                    </div>
+                    <p class="mt-4 text-[10px] text-gray-500 italic">* Tips Keputusan: Fokuskan pengawasan Anda pada
+                        item Kategori A untuk mengoptimalkan 80% modal Anda.</p>
+                </div>
+
+                <!-- Stock Recommendations Card -->
+                <div
+                    class="lg:col-span-2 bg-white p-6 rounded-lg shadow-sm border border-purple-100 flex flex-col h-full">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-lg font-bold text-gray-800">DSS: Stock Alerts & Recommendations</h3>
+                        <div class="flex items-center space-x-4">
+                            <select id="recommendation-status-filter"
+                                class="text-xs border border-gray-300 rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-blue-500">
+                                <option value="All">All Status</option>
+                                <option value="Critical">Critical</option>
+                                <option value="Out of Stock">Out of Stock</option>
+                                <option value="Overstock">Overstock</option>
+                                <option value="Dead Stock">Dead Stock</option>
+                            </select>
+                            <div class="flex space-x-2">
+                                <div class="group relative flex items-center cursor-help">
+                                    <span class="flex items-center text-[10px] font-medium text-red-600"><span
+                                            class="w-2 h-2 bg-red-600 rounded-full mr-1"></span> Critical</span>
+                                    <!-- Tooltip -->
+                                    <div
+                                        class="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-gray-800 text-white text-[10px] rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-50 pointer-events-none">
+                                        Stok di bawah titik pemesanan ulang
+                                    </div>
+                                </div>
+                                <div class="group relative flex items-center cursor-help">
+                                    <span class="flex items-center text-[10px] font-medium text-orange-500"><span
+                                            class="w-2 h-2 bg-orange-500 rounded-full mr-1"></span> Overstock</span>
+                                    <!-- Tooltip -->
+                                    <div
+                                        class="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-gray-800 text-white text-[10px] rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-50 pointer-events-none">
+                                        Stok berlebih (>3x kebutuhan)
+                                    </div>
+                                </div>
+                                <div class="group relative flex items-center cursor-help">
+                                    <span class="flex items-center text-[10px] font-medium text-red-800"><span
+                                            class="w-2 h-2 bg-red-800 rounded-full mr-1"></span> Out of Stock</span>
+                                    <!-- Tooltip -->
+                                    <div
+                                        class="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-gray-800 text-white text-[10px] rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-50 pointer-events-none">
+                                        Stok habis (0) namun ada permintaan
+                                    </div>
+                                </div>
+                                <div class="group relative flex items-center cursor-help">
+                                    <span class="flex items-center text-[10px] font-medium text-gray-500"><span
+                                            class="w-2 h-2 bg-gray-400 rounded-full mr-1"></span> Dead Stock</span>
+                                    <!-- Tooltip -->
+                                    <div
+                                        class="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-gray-800 text-white text-[10px] rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-50 pointer-events-none">
+                                        Barang tidak bergerak >30 hari
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Scrollable Table Container -->
+                    <div class="overflow-y-auto flex-1 max-h-[300px] border rounded border-gray-100 relative">
+                        <table class="min-w-full text-sm relative">
+                            <thead class="bg-gray-50 text-gray-600 sticky top-0 z-10 shadow-sm">
+                                <tr>
+                                    <th class="px-4 py-2 text-left font-semibold">Item Name</th>
+                                    <th class="px-4 py-2 text-center font-semibold">Status</th>
+                                    <th class="px-4 py-2 text-right font-semibold">Suggestion</th>
+                                </tr>
+                            </thead>
+                            <tbody id="recommendations-body" class="divide-y divide-gray-100">
+                                <tr>
+                                    <td colspan="3" class="px-4 py-8 text-center text-gray-400 italic">No
+                                        recommendations yet. Apply filters to
+                                        analyze.</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ABC Detail Modal -->
+            <div id="abc-modal"
+                class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden transition-opacity opacity-0">
+                <div
+                    class="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[80vh] flex flex-col transform transition-transform scale-95">
+                    <div class="p-4 border-b border-gray-100 flex justify-between items-center bg-gray-50 rounded-t-lg">
+                        <h3 id="abc-modal-title" class="text-lg font-bold text-gray-800">Category Details</h3>
+                        <button id="close-abc-modal" class="text-gray-400 hover:text-gray-600 focus:outline-none">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M6 18L18 6M6 6l12 12"></path>
+                            </svg>
+                        </button>
+                    </div>
+                    <div class="p-4 overflow-y-auto flex-1">
+                        <div class="mb-4 text-sm text-gray-600">
+                            <p>Total Value Contribution: <span id="abc-modal-value" class="font-bold">0%</span></p>
+                            <p>Total Items: <span id="abc-modal-count" class="font-bold">0</span></p>
+                        </div>
+                        <table class="min-w-full divide-y divide-gray-200 text-sm">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th class="px-4 py-2 text-left font-medium text-gray-500">Item Code</th>
+                                    <th class="px-4 py-2 text-left font-medium text-gray-500">Item Name</th>
+                                    <th class="px-4 py-2 text-right font-medium text-gray-500">Total Value (Rp)</th>
+                                </tr>
+                            </thead>
+                            <tbody id="abc-modal-body" class="bg-white divide-y divide-gray-100">
+                                <!-- Content populated by JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="p-4 border-t border-gray-100 text-right bg-gray-50 rounded-b-lg">
+                        <button id="close-abc-modal-btn"
+                            class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 text-sm font-medium">Close</button>
+                    </div>
+                </div>
+            </div>
+
             <!-- Charts Section -->
+
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
                     <h3 class="text-lg font-medium text-gray-900 mb-4">Top 5 Warehouse Stock Value</h3>
@@ -338,6 +497,7 @@
         import { auth } from './public/js/auth.js';
         import { Sidebar } from './public/js/sidebar.js';
         import { ChartManager } from './public/js/charts.js';
+        import { AnalyticsManager } from './public/js/analytics.js';
         import { formatNumber } from './public/js/utils.js';
 
         // Initialize dashboard
@@ -375,54 +535,66 @@
             // Initialize chart manager
             const chartManager = new ChartManager();
 
+            // Initialize analytics manager (DSS)
+            const analyticsManager = new AnalyticsManager();
+
             // Load dashboard data
-            await loadDashboardData(chartManager);
 
-            // Setup month filters
-            document.getElementById('transaction-month-filter').addEventListener('change', async function () {
-                const transactionMonth = this.value;
-                const stockMonth = document.getElementById('stock-month-filter').value;
-                const warehouseName = document.getElementById('warehouse-filter').value;
-                await loadDashboardData(chartManager, transactionMonth, stockMonth, warehouseName);
-            });
+            // Initial Data Load
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('date-filter').value = today;
 
-            document.getElementById('stock-month-filter').addEventListener('change', async function () {
-                const stockMonth = this.value;
-                const transactionMonth = document.getElementById('transaction-month-filter').value;
+            // Populate warehouse filter first
+            await populateWarehouseFilter();
+
+            await loadDashboardData(chartManager, analyticsManager, today, null);
+
+            // Listeners
+            document.getElementById('date-filter').addEventListener('change', async function () {
+                const selectedDate = this.value;
                 const warehouseName = document.getElementById('warehouse-filter').value;
-                await loadDashboardData(chartManager, transactionMonth, stockMonth, warehouseName);
+                await loadDashboardData(chartManager, analyticsManager, selectedDate, warehouseName);
             });
 
             document.getElementById('warehouse-filter').addEventListener('change', async function () {
                 const warehouseName = this.value;
-                const transactionMonth = document.getElementById('transaction-month-filter').value;
-                const stockMonth = document.getElementById('stock-month-filter').value;
-                await loadDashboardData(chartManager, transactionMonth, stockMonth, warehouseName);
+                const selectedDate = document.getElementById('date-filter').value;
+                await loadDashboardData(chartManager, analyticsManager, selectedDate, warehouseName);
+            });
+
+            // Re-render recommendations when status filter changes (client-side only)
+            document.getElementById('recommendation-status-filter').addEventListener('change', function () {
+                if (currentRecommendationsData) {
+                    renderRecommendations(currentRecommendationsData);
+                }
             });
         });
 
         // Function to load dashboard data
-        async function loadDashboardData(chartManager, transactionMonth = null, stockMonth = null, warehouseName = null) {
+        async function loadDashboardData(chartManager, analyticsManager, selectedDate = null, warehouseName = null) {
             try {
                 // Show loading spinner
                 document.getElementById('loading-spinner').classList.remove('hidden');
 
                 // Load summary cards
-                await loadSummaryCards(transactionMonth, stockMonth, warehouseName);
+                await loadSummaryCards(selectedDate, warehouseName);
 
-                // Populate warehouse filter if empty
-                const warehouseList = document.getElementById('warehouse-list');
-                if (warehouseList.children.length === 0) {
-                    await populateWarehouseFilter();
-                }
+                // Load DSS Analytics
+                // Note: using selectedDate for snapshot analysis
+                const abcData = await analyticsManager.getABCAnalysis(selectedDate, warehouseName);
+                renderABCAnalysis(abcData);
+
+                const recommendations = await analyticsManager.getStockRecommendations(selectedDate, warehouseName);
+                currentRecommendationsData = recommendations; // Global store
+                renderRecommendations(recommendations);
 
                 // Load charts
-                await chartManager.createStockPerOutletChart(stockMonth, warehouseName);
-                await chartManager.createReceivingByDateChart(transactionMonth, warehouseName);
-                await chartManager.createTransferByWarehouseChart(transactionMonth, warehouseName);
-                await chartManager.createTopSuppliersChart(transactionMonth, warehouseName);
-                await chartManager.createWarehouseUtilizationChart(stockMonth, warehouseName);
-                await chartManager.createStockValueBywarehouseChart(stockMonth, warehouseName);
+                await chartManager.createStockPerOutletChart(selectedDate, warehouseName);
+                await chartManager.createReceivingByDateChart(selectedDate, warehouseName);
+                await chartManager.createTransferByWarehouseChart(selectedDate, warehouseName);
+                await chartManager.createTopSuppliersChart(selectedDate, warehouseName);
+                await chartManager.createWarehouseUtilizationChart(selectedDate, warehouseName);
+                await chartManager.createStockValueBywarehouseChart(selectedDate, warehouseName);
             } catch (error) {
                 console.error('Error loading dashboard data:', error);
             } finally {
@@ -431,14 +603,156 @@
             }
         }
 
+
+        let currentABCData = null; // Store data for modal
+        let currentRecommendationsData = null; // Store data for filter
+
+        function renderABCAnalysis(data) {
+            currentABCData = data;
+
+            const totalA = data.A.reduce((sum, i) => sum + (parseFloat(i.total || i.value) || 0), 0);
+            const totalB = data.B.reduce((sum, i) => sum + (parseFloat(i.total || i.value) || 0), 0);
+            const totalC = data.C.reduce((sum, i) => sum + (parseFloat(i.total || i.value) || 0), 0);
+            const grandTotal = totalA + totalB + totalC;
+
+            const pctA = grandTotal > 0 ? ((totalA / grandTotal) * 100).toFixed(1) : 0;
+            const pctB = grandTotal > 0 ? ((totalB / grandTotal) * 100).toFixed(1) : 0;
+            const pctC = grandTotal > 0 ? ((totalC / grandTotal) * 100).toFixed(1) : 0;
+
+            document.getElementById('abc-a-count').textContent = `${data.A.length} Items`;
+            document.getElementById('abc-b-count').textContent = `${data.B.length} Items`;
+            document.getElementById('abc-c-count').textContent = `${data.C.length} Items`;
+
+            document.getElementById('abc-a-value').textContent = `${pctA}% Total Value (Rp ${formatNumber(totalA)})`;
+            document.getElementById('abc-b-value').textContent = `${pctB}% Total Value (Rp ${formatNumber(totalB)})`;
+            document.getElementById('abc-c-value').textContent = `${pctC}% Total Value (Rp ${formatNumber(totalC)})`;
+        }
+
+        // Setup Modal Events
+        document.addEventListener('DOMContentLoaded', () => {
+            const modal = document.getElementById('abc-modal');
+            const closeBtn = document.getElementById('close-abc-modal');
+            const closeBtnBottom = document.getElementById('close-abc-modal-btn');
+            const abcACard = document.getElementById('abc-a-card');
+            const abcBCard = document.getElementById('abc-b-card');
+            const abcCCard = document.getElementById('abc-c-card');
+
+            function openModal(category) {
+                if (!currentABCData) return;
+                const items = currentABCData[category];
+                // Calculate percentage based on grand total
+                const grandTotal = ['A', 'B', 'C'].reduce((acc, cat) =>
+                    acc + currentABCData[cat].reduce((sum, i) => sum + (parseFloat(i.total || i.value) || 0), 0), 0
+                );
+
+                // Assuming 'items' have 'value' or 'total' property. In fetch logic we used 'total' or 'value'.
+                // Let's ensure consistency. If we used base tables, we might have calculated 'total'.
+                // We will check item structure in access.
+
+                const totalVal = items.reduce((sum, item) => sum + (parseFloat(item.total || item.value) || 0), 0);
+                const percentage = grandTotal > 0 ? ((totalVal / grandTotal) * 100).toFixed(1) : 0;
+
+                document.getElementById('abc-modal-title').textContent = `Category ${category} Details`;
+                document.getElementById('abc-modal-count').textContent = items.length;
+                document.getElementById('abc-modal-value').textContent = `${percentage}% (Rp ${formatNumber(totalVal)})`;
+
+                const tbody = document.getElementById('abc-modal-body');
+                tbody.innerHTML = '';
+
+                // Sort by value desc
+                items.sort((a, b) => (parseFloat(b.total || b.value) || 0) - (parseFloat(a.total || a.value) || 0));
+
+                items.forEach(item => {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td class="px-4 py-2 text-gray-700 font-mono text-xs">${item.item_code}</td>
+                        <td class="px-4 py-2 text-gray-800 font-semibold">${item.item_name}</td>
+                        <td class="px-4 py-2 text-right text-gray-700 font-mono">Rp ${formatNumber(item.total || item.value)}</td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+
+                modal.classList.remove('hidden');
+                // Small timeout to allow transition
+                setTimeout(() => {
+                    modal.classList.remove('opacity-0');
+                    modal.children[0].classList.remove('scale-95');
+                    modal.children[0].classList.add('scale-100');
+                }, 10);
+            }
+
+            function closeModal() {
+                modal.classList.add('opacity-0');
+                modal.children[0].classList.remove('scale-100');
+                modal.children[0].classList.add('scale-95');
+                setTimeout(() => {
+                    modal.classList.add('hidden');
+                }, 300);
+            }
+
+            if (abcACard) abcACard.addEventListener('click', () => openModal('A'));
+            if (abcBCard) abcBCard.addEventListener('click', () => openModal('B'));
+            if (abcCCard) abcCCard.addEventListener('click', () => openModal('C'));
+
+            if (closeBtn) closeBtn.addEventListener('click', closeModal);
+            if (closeBtnBottom) closeBtnBottom.addEventListener('click', closeModal);
+
+            // Close on click outside
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) closeModal();
+            });
+        });
+
+        async function renderRecommendations(list) {
+            const body = document.getElementById('recommendations-body');
+            body.innerHTML = '';
+
+            const statusFilter = document.getElementById('recommendation-status-filter').value;
+            let filteredList = list;
+
+            if (statusFilter !== 'All') {
+                filteredList = list.filter(item => item.status === statusFilter);
+            }
+
+            if (!filteredList || filteredList.length === 0) {
+                body.innerHTML = '<tr><td colspan="3" class="px-4 py-8 text-center text-gray-400 italic">No recommendations found.</td></tr>';
+                return;
+            }
+
+            // Show all recommendations (scrollable)
+            filteredList.forEach(item => {
+                const tr = document.createElement('tr');
+                const statusColor = item.status === 'Overstock' ? 'text-orange-500 bg-orange-50' :
+                    item.status === 'Critical' ? 'text-red-600 bg-red-50' :
+                        item.status === 'Out of Stock' ? 'text-red-800 bg-red-100' :
+                            item.status === 'Dead Stock' ? 'text-gray-800 bg-gray-200' : 'text-green-500 bg-green-50';
+
+                tr.innerHTML = `
+                    <td class="px-4 py-3">
+                        <p class="font-medium text-gray-800">${item.item_name}</p>
+                        <p class="text-[10px] text-gray-500">${item.item_code} | Stock: ${formatNumber(item.stock)} ${item.unit}</p>
+                    </td>
+                    <td class="px-4 py-3 text-center">
+                        <span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${statusColor}">${item.status}</span>
+                    </td>
+                    <td class="px-4 py-3 text-right">
+                        <p class="text-xs font-bold text-gray-700">${item.suggestion}</p>
+                    </td>
+                `;
+                body.appendChild(tr);
+            });
+        }
+
         async function populateWarehouseFilter() {
             const supabase = auth.supabase;
-            // Get unique warehouse names from various summary views
+            // Get unique warehouse names from inventory_stock directly to avoid view dependency
             try {
-                const { data, error } = await supabase.from('stock_warehouse_value_summary').select('warehouse_name');
+                const { data, error } = await supabase.from('inventory_stock').select('warehouse_name');
                 if (!error && data) {
                     const warehouses = [...new Set(data.map(item => item.warehouse_name).filter(Boolean))].sort();
                     const list = document.getElementById('warehouse-list');
+                    // CLEAR EXISTING OPTIONS first
+                    list.innerHTML = '';
                     warehouses.forEach(w => {
                         const opt = document.createElement('option');
                         opt.value = w;
@@ -451,51 +765,38 @@
         }
 
         // Function to load summary cards
-        async function loadSummaryCards(transactionMonth, stockMonth, warehouseName) {
+        async function loadSummaryCards(selectedDate, warehouseName) {
             const supabase = auth.supabase;
-
-            // Helper to get date ranges for a month across multiple years
-            const getMonthRanges = (m) => {
-                if (!m || m === "All") return null;
-                const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
-                const idx = months.indexOf(m);
-                if (idx === -1) return null;
-
-                const years = [2023, 2024, 2025, 2026, 2027];
-                return years.map(year => {
-                    const start = `${year}-${String(idx + 1).padStart(2, '0')}-01`;
-                    const lastDay = new Date(year, idx + 1, 0).getDate();
-                    const end = `${year}-${String(idx + 1).padStart(2, '0')}-${lastDay}`;
-                    return { start, end };
-                });
-            };
-
-            const dataRangesTransaction = getMonthRanges(transactionMonth);
             const DATA_LIMIT = 5000;
 
             try {
-                // Total Stock (stock_warehouse_value_summary)
-                let stockQuery = supabase.from('stock_warehouse_value_summary').select('total_value, month, warehouse_name').limit(DATA_LIMIT);
-                if (stockMonth && stockMonth !== "All") {
-                    stockQuery = stockQuery.ilike('month', stockMonth);
+                // Total Stock (inventory_stock based on date_stock)
+                // We use base table 'inventory_stock' and filter by 'date_stock'
+                let stockQuery = supabase.from('inventory_stock').select('stock, item_cost, date_stock, warehouse_name').limit(DATA_LIMIT);
+                if (selectedDate) {
+                    stockQuery = stockQuery.eq('date_stock', selectedDate);
                 }
                 if (warehouseName) {
                     stockQuery = stockQuery.ilike('warehouse_name', warehouseName);
                 }
                 const { data: stockData, error: stockError } = await stockQuery;
                 if (!stockError && stockData) {
-                    const totalStock = stockData.reduce((sum, item) => sum + (parseFloat(item.total_value) || 0), 0);
+                    // Calculate Total Value: stock * item_cost
+                    // Ensure we handle potentially missing item_cost by defaulting to 0
+                    const totalStock = stockData.reduce((sum, item) => sum + ((parseFloat(item.stock) || 0) * (parseFloat(item.item_cost) || 0)), 0);
                     document.getElementById('total-stock').textContent = formatNumber(totalStock);
+                } else {
+                    document.getElementById('total-stock').textContent = "Rp 0";
                 }
 
                 // Total Receiving (receiving_daily_summary)
+                // Filter by exact date? "Daily Receiving" typically means receiving ON that day.
                 let receivingQuery = supabase.from('receiving_daily_summary').select('total_value, receiving_date, warehouse_name').limit(DATA_LIMIT);
-                if (transactionMonth && transactionMonth !== "All" && dataRangesTransaction) {
-                    const orFilters = dataRangesTransaction.map(range =>
-                        `and(receiving_date.gte.${range.start},receiving_date.lte.${range.end})`
-                    ).join(',');
-                    receivingQuery = receivingQuery.or(orFilters);
+
+                if (selectedDate) {
+                    receivingQuery = receivingQuery.eq('receiving_date', selectedDate);
                 }
+
                 if (warehouseName) {
                     receivingQuery = receivingQuery.ilike('warehouse_name', warehouseName);
                 }
@@ -506,13 +807,13 @@
                 }
 
                 // Total Transfer (transfer_warehouse_summary)
+                // "Daily Transfer" -> Transfer ON that day.
                 let transferQuery = supabase.from('transfer_warehouse_summary').select('total_value, document_date, warehouse_name').limit(DATA_LIMIT);
-                if (transactionMonth && transactionMonth !== "All" && dataRangesTransaction) {
-                    const orFilters = dataRangesTransaction.map(range =>
-                        `and(document_date.gte.${range.start},document_date.lte.${range.end})`
-                    ).join(',');
-                    transferQuery = transferQuery.or(orFilters);
+
+                if (selectedDate) {
+                    transferQuery = transferQuery.eq('document_date', selectedDate);
                 }
+
                 if (warehouseName) {
                     transferQuery = transferQuery.ilike('warehouse_name', warehouseName);
                 }

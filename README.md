@@ -72,7 +72,7 @@ CREATE TABLE inventory_stock (
   area TEXT,
   brand TEXT,
   outlet TEXT,
-  month TEXT
+  date_stock date
 );
 
 -- Receiving table

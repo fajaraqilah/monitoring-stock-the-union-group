@@ -46,21 +46,23 @@ class ChartManager {
     });
   }
 
-  // Create bar chart for stock per warehouse (stock_warehouse_value_summary)
-  async createStockPerOutletChart(filterMonth = null, warehouseName = null) {
-    let query = supabase
-      .from('stock_warehouse_value_summary')
-      .select('warehouse_name, total_value, month')
+  // Create bar chart for stock per warehouse (inventory_stock)
+  async createStockPerOutletChart(selectedDate = null, warehouseName = null) {
+    // Query base table directly for accurate daily snapshot
+    let dailyQuery = supabase
+      .from('inventory_stock')
+      .select('stock, item_cost, warehouse_name, date_stock')
       .not('warehouse_name', 'is', null)
 
-    if (filterMonth && filterMonth !== "All") {
-      query = query.ilike('month', filterMonth);
-    }
-    if (warehouseName) {
-      query = query.ilike('warehouse_name', warehouseName);
+    if (selectedDate) {
+      dailyQuery = dailyQuery.eq('date_stock', selectedDate);
     }
 
-    const { data, error } = await query;
+    if (warehouseName) {
+      dailyQuery = dailyQuery.ilike('warehouse_name', warehouseName);
+    }
+
+    const { data, error } = await dailyQuery;
 
     if (error) {
       console.error('Error fetching stock per warehouse data:', error);
@@ -68,13 +70,17 @@ class ChartManager {
     }
 
     const groupedData = {};
-    data.forEach(item => {
-      const warehouse = item.warehouse_name;
-      if (!groupedData[warehouse]) {
-        groupedData[warehouse] = 0;
-      }
-      groupedData[warehouse] += parseFloat(item.total_value || 0);
-    });
+    if (data) {
+      data.forEach(item => {
+        const warehouse = item.warehouse_name;
+        if (!groupedData[warehouse]) {
+          groupedData[warehouse] = 0;
+        }
+        // Use item_cost instead of price/total_value
+        // Handle potential nulls
+        groupedData[warehouse] += (parseFloat(item.stock || 0) * parseFloat(item.item_cost || 0));
+      });
+    }
 
     // Stable sort: Primary by value (desc), Secondary by name (asc)
     const sortedWarehouses = Object.entries(groupedData)
@@ -142,18 +148,25 @@ class ChartManager {
   }
 
   // Create line chart for receiving quantity by date (receiving_daily_summary)
-  async createReceivingByDateChart(filterMonth = null, warehouseName = null) {
+  async createReceivingByDateChart(selectedDate = null, warehouseName = null) {
     let query = supabase
       .from('receiving_daily_summary')
       .select('receiving_date, total_value, unit, warehouse_name')
       .not('receiving_date', 'is', null)
       .order('receiving_date')
 
-    const dateRanges = this.getMonthRanges(filterMonth);
-    if (filterMonth && filterMonth !== "All" && dateRanges) {
-      const orConditions = dateRanges.map(r => `and(receiving_date.gte.${r.start},receiving_date.lte.${r.end})`).join(',');
-      query = query.or(orConditions);
+    if (selectedDate) {
+      // Show trend for 7 days ending on selectedDate for better context than a single point
+      const endDateObj = new Date(selectedDate);
+      const startDateObj = new Date(endDateObj);
+      startDateObj.setDate(endDateObj.getDate() - 7);
+
+      const start = startDateObj.toISOString().split('T')[0];
+      const end = selectedDate;
+
+      query = query.gte('receiving_date', start).lte('receiving_date', end);
     }
+
     if (warehouseName) {
       query = query.ilike('warehouse_name', warehouseName);
     }
@@ -226,7 +239,7 @@ class ChartManager {
       type: 'line',
       data: {
         labels: dates,
-        datasets: datasets
+        datasets: datasets.length > 0 ? [datasets[0]] : []
       },
       options: {
         responsive: true,
@@ -321,7 +334,7 @@ class ChartManager {
   }
 
   // Create bar chart for transfer value by warehouse (transfer_warehouse_summary)
-  async createTransferByWarehouseChart(filterMonth = null, warehouseName = null) {
+  async createTransferByWarehouseChart(selectedDate = null, warehouseName = null) {
     let query = supabase
       .from('transfer_warehouse_summary')
       .select('warehouse_name, total_value, unit, document_date')
@@ -329,11 +342,13 @@ class ChartManager {
       .not('document_date', 'is', null)
       .order('document_date')
 
-    const dateRanges = this.getMonthRanges(filterMonth);
-    if (filterMonth && filterMonth !== "All" && dateRanges) {
-      const orConditions = dateRanges.map(r => `and(document_date.gte.${r.start},document_date.lte.${r.end})`).join(',');
-      query = query.or(orConditions);
+    if (selectedDate) {
+      // Filter by specific date
+      query = query.eq('document_date', selectedDate);
+    } else {
+      // If no date, maybe show latest? 
     }
+
     if (warehouseName) {
       query = query.ilike('warehouse_name', warehouseName);
     }
@@ -413,7 +428,7 @@ class ChartManager {
   }
 
   // Create bar chart for top 5 suppliers by volume (receiving_supplier_summary)
-  async createTopSuppliersChart(filterMonth = null, warehouseName = null) {
+  async createTopSuppliersChart(selectedDate = null, warehouseName = null) {
     let query = supabase
       .from('receiving_supplier_summary')
       .select('receiving_date, supplier, total_value, unit, warehouse_name')
@@ -421,11 +436,10 @@ class ChartManager {
       .not('receiving_date', 'is', null)
       .order('receiving_date')
 
-    const dateRanges = this.getMonthRanges(filterMonth);
-    if (filterMonth && filterMonth !== "All" && dateRanges) {
-      const orConditions = dateRanges.map(r => `and(receiving_date.gte.${r.start},receiving_date.lte.${r.end})`).join(',');
-      query = query.or(orConditions);
+    if (selectedDate) {
+      query = query.eq('receiving_date', selectedDate);
     }
+
     if (warehouseName) {
       query = query.ilike('warehouse_name', warehouseName);
     }
@@ -509,16 +523,13 @@ class ChartManager {
     this.chartOptions.topSuppliers = topSuppliersOptions;
   }
 
-  // Create doughnut chart for warehouse utilization (stock_warehouse_distribution_summary renamed or updated)
-  async createWarehouseUtilizationChart(filterMonth = null, warehouseName = null) {
-    // Note: Reusing the same logic but fetching total_value from stock_warehouse_value_summary for consistency
-    let query = supabase
-      .from('stock_warehouse_value_summary')
-      .select('warehouse_name, total_value, month')
-      .not('warehouse_name', 'is', null)
+  // Create doughnut chart for warehouse utilization
+  async createWarehouseUtilizationChart(selectedDate = null, warehouseName = null) {
+    // Switch to inventory_stock for date accuracy
+    let query = supabase.from('inventory_stock').select('stock, item_cost, warehouse_name, date_stock');
 
-    if (filterMonth && filterMonth !== "All") {
-      query = query.ilike('month', filterMonth);
+    if (selectedDate) {
+      query = query.eq('date_stock', selectedDate);
     }
     if (warehouseName) {
       query = query.ilike('warehouse_name', warehouseName);
@@ -532,13 +543,16 @@ class ChartManager {
     }
 
     const groupedData = {};
-    data.forEach(item => {
-      const warehouse = item.warehouse_name;
-      if (!groupedData[warehouse]) {
-        groupedData[warehouse] = 0;
-      }
-      groupedData[warehouse] += parseFloat(item.total_value || 0);
-    });
+    if (data) {
+      data.forEach(item => {
+        const warehouse = item.warehouse_name;
+        if (!groupedData[warehouse]) {
+          groupedData[warehouse] = 0;
+        }
+        // Use item_cost
+        groupedData[warehouse] += (parseFloat(item.stock || 0) * parseFloat(item.item_cost || 0));
+      });
+    }
 
     const sortedWarehouses = Object.entries(groupedData).sort((a, b) => b[1] - a[1]).slice(0, 10);
     const warehouses = sortedWarehouses.map(item => item[0]);
@@ -609,15 +623,13 @@ class ChartManager {
     this.chartOptions.warehouseUtilization = warehouseUtilizationOptions;
   }
 
-  // Create bar chart for stock value by warehouse group (stock_warehouse_value_summary)
-  async createStockValueBywarehouseChart(filterMonth = null, warehouseName = null) {
-    let query = supabase
-      .from('stock_warehouse_value_summary')
-      .select('warehouse_name, total_value, month')
-      .not('warehouse_name', 'is', null)
+  // Create bar chart for stock value by warehouse group (inventory_stock)
+  async createStockValueBywarehouseChart(selectedDate = null, warehouseName = null) {
+    // Switch to inventory_stock for date accuracy
+    let query = supabase.from('inventory_stock').select('stock, item_cost, warehouse_name, date_stock');
 
-    if (filterMonth && filterMonth !== "All") {
-      query = query.ilike('month', filterMonth);
+    if (selectedDate) {
+      query = query.eq('date_stock', selectedDate);
     }
     if (warehouseName) {
       query = query.ilike('warehouse_name', warehouseName);
@@ -631,13 +643,16 @@ class ChartManager {
     }
 
     const groupedData = {};
-    data.forEach(item => {
-      const warehouse = item.warehouse_name;
-      if (!groupedData[warehouse]) {
-        groupedData[warehouse] = 0;
-      }
-      groupedData[warehouse] += parseFloat(item.total_value || 0);
-    });
+    if (data) {
+      data.forEach(item => {
+        const warehouse = item.warehouse_name;
+        if (!groupedData[warehouse]) {
+          groupedData[warehouse] = 0;
+        }
+        // Use item_cost
+        groupedData[warehouse] += (parseFloat(item.stock || 0) * parseFloat(item.item_cost || 0));
+      });
+    }
 
     const sortedwarehouse = Object.entries(groupedData).sort((a, b) => b[1] - a[1]).slice(0, 10);
     const labels = sortedwarehouse.map(item => item[0]);
