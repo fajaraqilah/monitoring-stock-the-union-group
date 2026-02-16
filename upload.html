@@ -198,7 +198,7 @@
                                     <li>GRPO, PO, Receiving Date</li>
                                     <li>Item Code, Item Name, Item Group</li>
                                     <li>Supplier, Brand, Quantity, Unit</li>
-                                    <li>Unit Price, Total, Due Date</li>
+                                    <li>Unit Price, Total</li>
                                     <li>Location, Warehouse Code, Warehouse Name</li>
                                     <li>Remarks</li>
                                 </ul>
@@ -215,8 +215,8 @@
                                 </ul>
                             </div>
                         </div>
-                        <p class="text-[10px] text-gray-400 mt-4 italic">* Headers are auto-normalized (spaces to
-                            underscores, lowercase). Dates should be YYYY-MM-DD.</p>
+                        <p class="text-[10px] text-gray-400 mt-4 italic">* Judul kolom akan dinormalisasi secara
+                            otomatis (spasi menjadi garis bawah, huruf kecil). Format tanggal harus YYYY-MM-DD.</p>
                     </div>
                 </div>
 
@@ -242,10 +242,31 @@
                                 <option value="internal_transfer">Internal Transfer</option>
                             </select>
                         </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Select Date</label>
-                            <input type="date" id="delete-date"
-                                class="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-500">
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Select Date</label>
+                                <input type="date" id="delete-date"
+                                    class="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-500">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Or Select Month</label>
+                                <input list="manual-month-list" id="delete-month" placeholder="Select Month..."
+                                    class="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-500">
+                                <datalist id="manual-month-list">
+                                    <option value="January">
+                                    <option value="February">
+                                    <option value="March">
+                                    <option value="April">
+                                    <option value="May">
+                                    <option value="June">
+                                    <option value="July">
+                                    <option value="August">
+                                    <option value="September">
+                                    <option value="October">
+                                    <option value="November">
+                                    <option value="December">
+                                </datalist>
+                            </div>
                         </div>
                         <div class="pt-2">
                             <button id="manual-delete-btn"
@@ -254,7 +275,8 @@
                             </button>
                         </div>
                         <p class="text-xs text-gray-500 italic">
-                            * This will permanently delete data for the selected period. Proceed with caution.
+                            * Ini akan menghapus data secara permanen untuk periode yang dipilih. Lakukan dengan
+                            hati-hati.
                         </p>
                     </div>
                 </div>
@@ -445,6 +467,22 @@
                 });
             }
 
+            isDateColumn(header) {
+                const normalized = header.toLowerCase().replace(/\s+/g, '_');
+                return normalized.includes('date') || normalized === 'month';
+            }
+
+            convertExcelDate(value) {
+                if (typeof value === 'number' && value > 30000 && value < 60000) {
+                    // Excel dates are number of days since Dec 30, 1899
+                    const date = new Date(Math.round((value - 25569) * 864e5));
+                    if (!isNaN(date.getTime())) {
+                        return date.toISOString().split('T')[0];
+                    }
+                }
+                return value;
+            }
+
             renderPreview() {
                 // Clear existing content
                 document.getElementById('preview-thead').innerHTML = '';
@@ -472,7 +510,13 @@
                     this.headers.forEach(header => {
                         const td = document.createElement('td');
                         td.className = 'px-6 py-4 whitespace-nowrap text-sm text-gray-900';
-                        td.textContent = row[header] || '';
+
+                        let val = row[header] || '';
+                        if (this.isDateColumn(header)) {
+                            val = this.convertExcelDate(val);
+                        }
+
+                        td.textContent = val;
                         tr.appendChild(td);
                     });
 
@@ -498,9 +542,14 @@
                         const newRow = {};
 
                         // Map headers to expected column names based on target table
-                        for (const [header, value] of Object.entries(row)) {
+                        for (let [header, value] of Object.entries(row)) {
                             // Convert header to lowercase and replace spaces with underscores for matching
                             let normalizedHeader = header.toLowerCase().replace(/\s+/g, '_');
+
+                            // Convert Excel dates if necessary
+                            if (this.isDateColumn(normalizedHeader)) {
+                                value = this.convertExcelDate(value);
+                            }
 
                             // Specific mappings for cases where auto-normalization isn't enough
                             if (this.targetTable === 'internal_transfer') {
@@ -509,19 +558,39 @@
                                 }
                             }
 
-                            newRow[normalizedHeader] = value;
+                            // Skip due_date for receiving table
+                            if (this.targetTable === 'receiving' && normalizedHeader === 'due_date') {
+                                continue;
+                            }
 
-                            // Track dates found in data (for inventory_stock) and months (for others)
-                            if (normalizedHeader === 'date_stock' || normalizedHeader === 'stock_date' || normalizedHeader === 'date') {
-                                // Map to date_stock
-                                delete newRow[normalizedHeader];
-                                newRow['date_stock'] = value;
-                                monthsFound.add({ type: 'date', value: value });
+                            // Target-aware date column mapping
+                            const dateHeaders = ['date_stock', 'stock_date', 'date', 'receiving_date', 'document_date', 'posting_date'];
+
+                            if (dateHeaders.includes(normalizedHeader)) {
+                                let targetDateCol = '';
+                                if (this.targetTable === 'inventory_stock') targetDateCol = 'date_stock';
+                                else if (this.targetTable === 'receiving') targetDateCol = 'receiving_date';
+                                else if (this.targetTable === 'internal_transfer') targetDateCol = 'document_date';
+
+                                if (targetDateCol) {
+                                    newRow[targetDateCol] = value;
+                                    // If we renamed it, delete the original normalized header from newRow
+                                    if (normalizedHeader !== targetDateCol) {
+                                        delete newRow[normalizedHeader];
+                                    }
+
+                                    // Track for overwrite logic
+                                    monthsFound.add(`date:${value}`);
+                                    const m = this.getMonthFromDate(value);
+                                    if (m) monthsFound.add(`month:${m}`);
+                                } else {
+                                    newRow[normalizedHeader] = value;
+                                }
                             } else if (normalizedHeader === 'month') {
-                                monthsFound.add({ type: 'month', value: value });
-                            } else if (normalizedHeader === 'receiving_date' || normalizedHeader === 'document_date' || normalizedHeader === 'posting_date') {
-                                const m = this.getMonthFromDate(value);
-                                if (m) monthsFound.add({ type: 'month', value: m });
+                                newRow[normalizedHeader] = value;
+                                monthsFound.add(`month:${value}`);
+                            } else {
+                                newRow[normalizedHeader] = value;
                             }
                         }
 
@@ -540,7 +609,11 @@
                             }
                             await supabase.from(this.targetTable).delete().neq('id', '00000000-0000-0000-0000-000000000000'); // Delete all
                         } else {
-                            const items = Array.from(monthsFound);
+                            const items = Array.from(monthsFound).map(str => {
+                                const [type, value] = str.split(':');
+                                return { type, value };
+                            });
+
                             // Group by type
                             const dates = items.filter(i => i.type === 'date').map(i => i.value);
                             const months = items.filter(i => i.type === 'month').map(i => i.value);
@@ -561,27 +634,30 @@
                                 }
                             }
 
+                            let totalDeleted = 0;
                             for (const m of months) {
-                                if (this.targetTable === 'inventory_stock') {
-                                    // Only delete if months are explicitly used (legacy)
-                                    // Ideally inventory_stock now uses date_stock mostly
-                                    await supabase.from(this.targetTable).delete().eq('month', m);
-                                } else if (this.targetTable === 'receiving') {
-                                    const ranges = this.getMonthRanges(m);
-                                    if (ranges) {
-                                        for (const r of ranges) {
-                                            await supabase.from(this.targetTable).delete().gte('receiving_date', r.start).lte('receiving_date', r.end);
-                                        }
+                                const ranges = this.getMonthRanges(m);
+                                if (!ranges) continue;
+
+                                for (const r of ranges) {
+                                    let q = supabase.from(this.targetTable).delete();
+
+                                    // For 'date' type columns, use pure YYYY-MM-DD strings
+                                    if (this.targetTable === 'inventory_stock') {
+                                        q = q.gte('date_stock', r.start).lte('date_stock', r.end);
+                                    } else if (this.targetTable === 'receiving') {
+                                        q = q.gte('receiving_date', r.start).lte('receiving_date', r.end);
+                                    } else if (this.targetTable === 'internal_transfer') {
+                                        q = q.gte('document_date', r.start).lte('document_date', r.end);
                                     }
-                                } else if (this.targetTable === 'internal_transfer') {
-                                    const ranges = this.getMonthRanges(m);
-                                    if (ranges) {
-                                        for (const r of ranges) {
-                                            await supabase.from(this.targetTable).delete().gte('document_date', r.start).lte('document_date', r.end);
-                                        }
-                                    }
+
+                                    // Use 'is not null' as a safer safety lock for bigint IDs
+                                    const { data: deleted, error } = await q.not('id', 'is', null).select();
+                                    if (error) throw error;
+                                    if (deleted) totalDeleted += deleted.length;
                                 }
                             }
+                            console.log(`Total existing records deleted: ${totalDeleted}`);
                         }
                     }
 
@@ -597,7 +673,7 @@
                         if (error) throw error;
                     }
 
-                    showToast(`Successfully uploaded ${uploadData.length} records to ${this.targetTable}`, 'success');
+                    showToast(`Berhasil mengunggah ${uploadData.length} data ke ${this.targetTable}`, 'success');
 
                     // Reset form
                     this.resetForm();
@@ -626,9 +702,10 @@
 
                 const years = [2024, 2025, 2026]; // Relevant years
                 return years.map(year => {
-                    const start = `${year}-${String(idx + 1).padStart(2, '0')}-01`;
+                    const month = String(idx + 1).padStart(2, '0');
+                    const start = `${year}-${month}-01`;
                     const lastDay = new Date(year, idx + 1, 0).getDate();
-                    const end = `${year}-${String(idx + 1).padStart(2, '0')}-${lastDay}`;
+                    const end = `${year}-${month}-${lastDay}`;
                     return { start, end };
                 });
             }
@@ -636,43 +713,60 @@
             async manualDelete() {
                 const table = document.getElementById('delete-target-table').value;
                 const date = document.getElementById('delete-date').value;
+                const month = document.getElementById('delete-month').value;
 
                 if (!table) {
                     showToast('Please select a table to delete from', 'error');
                     return;
                 }
 
-                const confirmMsg = date
-                    ? `Are you sure you want to delete ALL data for ${date} from ${table}? This action cannot be undone.`
-                    : `Are you sure you want to delete ALL data from ${table}? This action cannot be undone.`;
+                let confirmMsg = '';
+                if (date) {
+                    confirmMsg = `Are you sure you want to delete ALL data for ${date} from ${table}? This action cannot be undone.`;
+                } else if (month) {
+                    confirmMsg = `Are you sure you want to delete ALL data for month ${month} from ${table}? This action cannot be undone.`;
+                } else {
+                    confirmMsg = `⚠️ WARNING: You are about to delete ALL data from ${table}. This action cannot be undone. Proceed?`;
+                }
 
                 if (!confirm(confirmMsg)) return;
 
                 try {
                     document.getElementById('loading-spinner').classList.remove('hidden');
                     const supabase = auth.supabase;
-                    let query = supabase.from(table).delete();
 
+                    let totalDeletedCount = 0;
                     if (date) {
-                        if (table === 'inventory_stock') {
-                            query = query.eq('date_stock', date);
-                        } else if (table === 'receiving' || table === 'internal_transfer') {
-                            // Can't easily map single date to ranges logic used for months, 
-                            // maybe convert 'date' input to 'month' string?
-                            // Or should we support date deletion for these too?
-                            // Let's assume user wants to delete specific date for receiving/transfer too
-                            if (table === 'receiving') query = query.eq('receiving_date', date);
-                            if (table === 'internal_transfer') query = query.eq('document_date', date);
+                        let q = supabase.from(table).delete();
+                        // For exact date matching on 'date' column type
+                        if (table === 'inventory_stock') q = q.eq('date_stock', date);
+                        else if (table === 'receiving') q = q.eq('receiving_date', date);
+                        else if (table === 'internal_transfer') q = q.eq('document_date', date);
+
+                        const { data: deleted, error } = await q.not('id', 'is', null).select();
+                        if (error) throw error;
+                        if (deleted) totalDeletedCount += deleted.length;
+                    } else if (month) {
+                        const ranges = this.getMonthRanges(month);
+                        if (ranges) {
+                            for (const r of ranges) {
+                                let q = supabase.from(table).delete();
+                                if (table === 'inventory_stock') q = q.gte('date_stock', r.start).lte('date_stock', r.end);
+                                else if (table === 'receiving') q = q.gte('receiving_date', r.start).lte('receiving_date', r.end);
+                                else if (table === 'internal_transfer') q = q.gte('document_date', r.start).lte('document_date', r.end);
+
+                                const { data: deleted, error } = await q.not('id', 'is', null).select();
+                                if (error) throw error;
+                                if (deleted) totalDeletedCount += deleted.length;
+                            }
                         }
-                    } else {
-                        // Delete all (using a condition that's always true for modern Supabase delete requirements)
-                        query = query.neq('item_code', 'dummy_non_existent_value');
                     }
 
-                    const { error } = await query;
-                    if (error) throw error;
-
-                    showToast(`Successfully deleted records from ${table}`, 'success');
+                    if (totalDeletedCount === 0) {
+                        showToast(`Tidak ada data yang ditemukan untuk dihapus dari ${table} pada periode tersebut.`, 'warning');
+                    } else {
+                        showToast(`Berhasil menghapus ${totalDeletedCount} data dari ${table}.`, 'success');
+                    }
                 } catch (error) {
                     console.error('Delete error:', error);
                     showToast('Error deleting data: ' + error.message, 'error');
