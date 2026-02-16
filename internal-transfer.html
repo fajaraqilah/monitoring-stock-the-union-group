@@ -565,15 +565,27 @@
                 try {
                     const supabase = auth.supabase;
 
-                    // Fetch unique values from the internal_transfer table (top 5000 rows as sample)
-                    const { data, error } = await supabase.from('internal_transfer').select('from_warehouse_name, warehouse_name').limit(5000);
-                    if (!error && data) {
-                        const uniqueFrom = [...new Set(data.map(item => item.from_warehouse_name).filter(Boolean))].sort();
-                        this.populateDatalist('from-warehouse-list', uniqueFrom);
+                    // Fetch from multiple sources to ensure we get all unique warehouses
+                    const [stockRes, receivingRes, transferRes] = await Promise.all([
+                        supabase.from('stock_warehouse_value_summary').select('warehouse_name'),
+                        supabase.from('receiving_daily_summary').select('warehouse_name'),
+                        supabase.from('transfer_warehouse_summary').select('warehouse_name')
+                    ]);
 
-                        const uniqueTo = [...new Set(data.map(item => item.warehouse_name).filter(Boolean))].sort();
-                        this.populateDatalist('to-warehouse-list', uniqueTo);
-                    }
+                    const allWarehouses = new Set();
+                    if (stockRes.data) stockRes.data.forEach(item => allWarehouses.add(item.warehouse_name));
+                    if (receivingRes.data) receivingRes.data.forEach(item => allWarehouses.add(item.warehouse_name));
+                    if (transferRes.data) transferRes.data.forEach(item => allWarehouses.add(item.warehouse_name));
+
+                    // Also check internal_transfer specifically for 'from_warehouse_name'
+                    const { data: transferFromData } = await supabase.from('internal_transfer').select('from_warehouse_name').limit(1000);
+                    if (transferFromData) transferFromData.forEach(item => allWarehouses.add(item.from_warehouse_name));
+
+                    const sortedWarehouses = [...allWarehouses].filter(Boolean).sort();
+
+                    this.populateDatalist('from-warehouse-list', sortedWarehouses);
+                    this.populateDatalist('to-warehouse-list', sortedWarehouses);
+
                 } catch (error) {
                     console.error('Error loading filter options:', error);
                 }

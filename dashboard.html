@@ -745,20 +745,33 @@
 
         async function populateWarehouseFilter() {
             const supabase = auth.supabase;
-            // Get unique warehouse names from inventory_stock directly to avoid view dependency
             try {
-                const { data, error } = await supabase.from('inventory_stock').select('warehouse_name');
-                if (!error && data) {
-                    const warehouses = [...new Set(data.map(item => item.warehouse_name).filter(Boolean))].sort();
-                    const list = document.getElementById('warehouse-list');
-                    // CLEAR EXISTING OPTIONS first
-                    list.innerHTML = '';
-                    warehouses.forEach(w => {
-                        const opt = document.createElement('option');
-                        opt.value = w;
-                        list.appendChild(opt);
-                    });
-                }
+                // Fetch from multiple summary views to ensure we get all unique warehouses
+                // Summary views are much smaller than raw tables, so we avoid row limit issues
+                const [stockRes, receivingRes, transferRes] = await Promise.all([
+                    supabase.from('stock_warehouse_value_summary').select('warehouse_name'),
+                    supabase.from('receiving_daily_summary').select('warehouse_name'),
+                    supabase.from('transfer_warehouse_summary').select('warehouse_name')
+                ]);
+
+                const allWarehouses = new Set();
+                
+                if (stockRes.data) stockRes.data.forEach(item => allWarehouses.add(item.warehouse_name));
+                if (receivingRes.data) receivingRes.data.forEach(item => allWarehouses.add(item.warehouse_name));
+                if (transferRes.data) transferRes.data.forEach(item => allWarehouses.add(item.warehouse_name));
+
+                // Also check internal_transfer specifically for 'from_warehouse_name' which might not be in summaries
+                const { data: transferFromData } = await supabase.from('internal_transfer').select('from_warehouse_name').limit(1000);
+                if (transferFromData) transferFromData.forEach(item => allWarehouses.add(item.from_warehouse_name));
+
+                const sortedWarehouses = [...allWarehouses].filter(Boolean).sort();
+                const list = document.getElementById('warehouse-list');
+                list.innerHTML = '';
+                sortedWarehouses.forEach(w => {
+                    const opt = document.createElement('option');
+                    opt.value = w;
+                    list.appendChild(opt);
+                });
             } catch (e) {
                 console.error('Error populating warehouse filter:', e);
             }

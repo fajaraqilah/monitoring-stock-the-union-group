@@ -563,20 +563,28 @@
                 try {
                     const supabase = auth.supabase;
 
-                    // Fetch unique values for Warehouse, Item Group, and Item Name
-                    // We'll use the summary view because it's much smaller than the raw stock table
-                    const { data, error } = await supabase
-                        .from('stock_warehouse_value_summary')
-                        .select('warehouse_name');
+                    // Fetch from multiple sources to ensure we get all unique warehouses
+                    const [stockRes, receivingRes, transferRes] = await Promise.all([
+                        supabase.from('stock_warehouse_value_summary').select('warehouse_name'),
+                        supabase.from('receiving_daily_summary').select('warehouse_name'),
+                        supabase.from('transfer_warehouse_summary').select('warehouse_name')
+                    ]);
 
-                    if (!error && data) {
-                        const uniqueWarehouses = [...new Set(data.map(item => item.warehouse_name).filter(Boolean))].sort();
-                        this.populateDatalist('warehouse-list', uniqueWarehouses);
-                    }
+                    const allWarehouses = new Set();
+                    if (stockRes.data) stockRes.data.forEach(item => allWarehouses.add(item.warehouse_name));
+                    if (receivingRes.data) receivingRes.data.forEach(item => allWarehouses.add(item.warehouse_name));
+                    if (transferRes.data) transferRes.data.forEach(item => allWarehouses.add(item.warehouse_name));
+
+                    // Also check internal_transfer specifically for 'from_warehouse_name'
+                    const { data: transferFromData } = await supabase.from('internal_transfer').select('from_warehouse_name').limit(1000);
+                    if (transferFromData) transferFromData.forEach(item => allWarehouses.add(item.from_warehouse_name));
+
+                    const uniqueWarehouses = [...allWarehouses].filter(Boolean).sort();
+                    this.populateDatalist('warehouse-list', uniqueWarehouses);
 
                     // For Item Group and Name, we might need to fetch from the main table but limited to a reasonable number of unique values
                     // or just assume we can fetch them from the current dataset for now if no dedicated summary exists.
-                    // Let's try to get Item Groups from the main table (first 1000 rows to find groups)
+                    // Let's try to get Item Groups from the main table (first 5000 rows to find groups)
                     const { data: groupData } = await supabase.from('inventory_stock').select('item_group').limit(5000);
                     if (groupData) {
                         const uniqueGroups = [...new Set(groupData.map(item => item.item_group).filter(Boolean))].sort();
