@@ -200,23 +200,9 @@
             <div class="mb-6 bg-white p-4 rounded-lg shadow-sm">
                 <div class="grid grid-cols-1 md:grid-cols-5 gap-4">
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Month Filter</label>
-                        <input list="month-list" id="month-filter" placeholder="Select Month..."
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Date Filter</label>
+                        <input type="date" id="date-filter"
                             class="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
-                        <datalist id="month-list">
-                            <option value="January">
-                            <option value="February">
-                            <option value="March">
-                            <option value="April">
-                            <option value="May">
-                            <option value="June">
-                            <option value="July">
-                            <option value="August">
-                            <option value="September">
-                            <option value="October">
-                            <option value="November">
-                            <option value="December">
-                        </datalist>
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Supplier Filter</label>
@@ -428,7 +414,7 @@
                     supplier: '',
                     warehouse: '',
                     itemName: '',
-                    month: ''
+                    date: ''
                 };
                 this.sort = {
                     column: 'receiving_date',
@@ -459,14 +445,9 @@
                         query = query.ilike('item_name', `%${this.filters.itemName}%`);
                     }
 
-                    // Apply Month Filter
-                    // Receiving table uses receiving_date, so we need to filter by date range
-                    if (this.filters.month) {
-                        const dateRanges = this.getMonthRanges(this.filters.month);
-                        if (dateRanges) {
-                            const orConditions = dateRanges.map(r => `and(receiving_date.gte.${r.start},receiving_date.lte.${r.end})`).join(',');
-                            query = query.or(orConditions);
-                        }
+                    // Apply Date Filter
+                    if (this.filters.date) {
+                        query = query.eq('receiving_date', this.filters.date);
                     }
 
                     // Apply Pagination and Sorting (Server-side)
@@ -611,7 +592,7 @@
                 this.filters.supplier = document.getElementById('supplier-filter').value.trim();
                 this.filters.warehouse = document.getElementById('warehouse-filter').value.trim();
                 this.filters.itemName = document.getElementById('item-name-filter').value.trim();
-                this.filters.month = document.getElementById('month-filter').value.trim();
+                this.filters.date = document.getElementById('date-filter').value;
 
                 this.currentPage = 1;
                 await this.loadData();
@@ -642,21 +623,7 @@
                 await this.loadData();
             }
 
-            // Helper to get date ranges
-            getMonthRanges(m) {
-                if (!m) return null;
-                const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
-                const idx = months.indexOf(m);
-                if (idx === -1) return null;
 
-                const years = [2023, 2024, 2025, 2026, 2027];
-                return years.map(year => {
-                    const start = `${year}-${String(idx + 1).padStart(2, '0')}-01`;
-                    const lastDay = new Date(year, idx + 1, 0).getDate();
-                    const end = `${year}-${String(idx + 1).padStart(2, '0')}-${lastDay}`;
-                    return { start, end };
-                });
-            }
 
             async exportData(format) {
                 try {
@@ -669,11 +636,7 @@
                     if (this.filters.warehouse) query = query.ilike('warehouse_name', `%${this.filters.warehouse}%`);
                     if (this.filters.itemName) query = query.ilike('item_name', `%${this.filters.itemName}%`);
 
-                    const dateRanges = this.getMonthRanges(this.filters.month);
-                    if (dateRanges) {
-                        const orConditions = dateRanges.map(r => `and(receiving_date.gte.${r.start},receiving_date.lte.${r.end})`).join(',');
-                        query = query.or(orConditions);
-                    }
+                    if (this.filters.date) query = query.eq('receiving_date', this.filters.date);
 
                     const { data, error } = await query.order('receiving_date', { ascending: false });
 
@@ -701,14 +664,14 @@
                 const worksheet = XLSX.utils.json_to_sheet(data);
                 const workbook = XLSX.utils.book_new();
                 XLSX.utils.book_append_sheet(workbook, worksheet, "Receiving");
-                XLSX.writeFile(workbook, `Receiving_Data_${this.filters.month || 'All'}.xlsx`);
+                XLSX.writeFile(workbook, `Receiving_Data_${this.filters.date || 'All'}.xlsx`);
             }
 
             exportToPDF(data) {
                 const { jsPDF } = window.jspdf;
                 const doc = new jsPDF('l', 'mm', 'a2');
 
-                doc.text(`Receiving Data - ${this.filters.month || 'All Months'}`, 14, 15);
+                doc.text(`Receiving Data - ${this.filters.date || 'All Dates'}`, 14, 15);
 
                 const tableColumn = [
                     "Date", "GRPO", "PO", "Item Code", "Group",
@@ -740,7 +703,7 @@
                     styles: { fontSize: 7, cellPadding: 1 },
                 });
 
-                doc.save(`Receiving_Data_${this.filters.month || 'All'}.pdf`);
+                doc.save(`Receiving_Data_${this.filters.date || 'All'}.pdf`);
             }
         }
 
