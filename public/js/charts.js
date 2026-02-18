@@ -51,7 +51,7 @@ class ChartManager {
     // Query base table directly for accurate daily snapshot
     let dailyQuery = supabase
       .from('inventory_stock')
-      .select('stock, item_cost, warehouse_name, date_stock')
+      .select('total, warehouse_name, date_stock')
       .not('warehouse_name', 'is', null)
 
     if (selectedDate) {
@@ -76,9 +76,8 @@ class ChartManager {
         if (!groupedData[warehouse]) {
           groupedData[warehouse] = 0;
         }
-        // Use item_cost instead of price/total_value
-        // Handle potential nulls
-        groupedData[warehouse] += (parseFloat(item.stock || 0) * parseFloat(item.item_cost || 0));
+        // Use pre-calculated total column
+        groupedData[warehouse] += (parseFloat(item.total || 0));
       });
     }
 
@@ -526,7 +525,7 @@ class ChartManager {
   // Create doughnut chart for warehouse utilization
   async createWarehouseUtilizationChart(selectedDate = null, warehouseName = null) {
     // Switch to inventory_stock for date accuracy
-    let query = supabase.from('inventory_stock').select('stock, item_cost, warehouse_name, date_stock');
+    let query = supabase.from('inventory_stock').select('total, warehouse_name, date_stock');
 
     if (selectedDate) {
       query = query.eq('date_stock', selectedDate);
@@ -549,8 +548,8 @@ class ChartManager {
         if (!groupedData[warehouse]) {
           groupedData[warehouse] = 0;
         }
-        // Use item_cost
-        groupedData[warehouse] += (parseFloat(item.stock || 0) * parseFloat(item.item_cost || 0));
+        // Use pre-calculated total column
+        groupedData[warehouse] += (parseFloat(item.total || 0));
       });
     }
 
@@ -623,10 +622,10 @@ class ChartManager {
     this.chartOptions.warehouseUtilization = warehouseUtilizationOptions;
   }
 
-  // Create bar chart for stock value by warehouse group (inventory_stock)
+  // Create bar chart for stock value by item group
   async createStockValueBywarehouseChart(selectedDate = null, warehouseName = null) {
-    // Switch to inventory_stock for date accuracy
-    let query = supabase.from('inventory_stock').select('stock, item_cost, warehouse_name, date_stock');
+    // Switch to inventory_stock for date accuracy, group by ITEM GROUP to avoid duplication
+    let query = supabase.from('inventory_stock').select('total, item_group, date_stock, warehouse_name');
 
     if (selectedDate) {
       query = query.eq('date_stock', selectedDate);
@@ -638,25 +637,25 @@ class ChartManager {
     const { data, error } = await query;
 
     if (error) {
-      console.error('Error fetching stock value by warehouse data:', error);
+      console.error('Error fetching stock value by group data:', error);
       return;
     }
 
     const groupedData = {};
     if (data) {
       data.forEach(item => {
-        const warehouse = item.warehouse_name;
-        if (!groupedData[warehouse]) {
-          groupedData[warehouse] = 0;
+        const group = item.item_group || 'Uncategorized';
+        if (!groupedData[group]) {
+          groupedData[group] = 0;
         }
-        // Use item_cost
-        groupedData[warehouse] += (parseFloat(item.stock || 0) * parseFloat(item.item_cost || 0));
+        // Use total column
+        groupedData[group] += (parseFloat(item.total || 0));
       });
     }
 
-    const sortedwarehouse = Object.entries(groupedData).sort((a, b) => b[1] - a[1]).slice(0, 10);
-    const labels = sortedwarehouse.map(item => item[0]);
-    const values = sortedwarehouse.map(item => item[1]);
+    const sortedGroups = Object.entries(groupedData).sort((a, b) => b[1] - a[1]).slice(0, 10);
+    const labels = sortedGroups.map(item => item[0]);
+    const values = sortedGroups.map(item => item[1]);
 
     if (this.charts.stockValueBywarehouse) {
       this.charts.stockValueBywarehouse.destroy();
