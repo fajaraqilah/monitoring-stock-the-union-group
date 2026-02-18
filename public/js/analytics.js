@@ -14,8 +14,8 @@ class AnalyticsManager {
      */
     async getABCAnalysis(selectedDate = null, warehouseName = null) {
         // Query stock data based on date
-        // Use stock * item_cost for value
-        let query = this.supabase.from('inventory_stock').select('item_code, item_name, stock, item_cost, date_stock, warehouse_name');
+        // Use the 'total' column directly
+        let query = this.supabase.from('inventory_stock').select('item_code, item_name, total, date_stock, warehouse_name');
 
         if (selectedDate) query = query.eq('date_stock', selectedDate);
         if (warehouseName) query = query.ilike('warehouse_name', warehouseName);
@@ -27,10 +27,10 @@ class AnalyticsManager {
         }
 
         // Calculate value per item
-        // Use (stock * item_cost) as 'value'
+        // Use the 'total' column directly as 'value'
         const itemValues = data.map(item => ({
             ...item,
-            value: (parseFloat(item.stock) || 0) * (parseFloat(item.item_cost) || 0)
+            value: parseFloat(item.total) || 0
         })).sort((a, b) => b.value - a.value); // Sort descending by value
 
         if (itemValues.length === 0) return { A: [], B: [], C: [] };
