@@ -41,16 +41,16 @@ class AnalyticsManager {
         const result = { A: [], B: [], C: [] };
 
         itemValues.forEach(item => {
-            runningTotal += item.value;
-            const percentage = (runningTotal / grandTotal) * 100;
+            const currentPercentage = (runningTotal / grandTotal) * 100;
 
-            if (percentage <= 80) {
+            if (currentPercentage < 80) {
                 result.A.push(item);
-            } else if (percentage <= 95) {
+            } else if (currentPercentage < 95) {
                 result.B.push(item);
             } else {
                 result.C.push(item);
             }
+            runningTotal += item.value;
         });
 
         return result;
