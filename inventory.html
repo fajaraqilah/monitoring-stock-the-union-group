@@ -326,6 +326,19 @@
                         <tbody id="inventory-table-body" class="bg-white divide-y divide-gray-200">
                             <!-- Table rows will be populated by JavaScript -->
                         </tbody>
+                        <tfoot class="bg-gray-50 font-bold border-t-2 border-gray-300">
+                            <tr>
+                                <td colspan="7" class="px-6 py-4 text-right text-xs text-gray-700 uppercase">Grand Total
+                                    (This Page):</td>
+                                <td id="total-stock-page"
+                                    class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">0</td>
+                                <td class="px-6 py-4"></td>
+                                <td class="px-6 py-4"></td>
+                                <td id="total-value-page"
+                                    class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">0</td>
+                                <td colspan="4" class="px-6 py-4"></td>
+                            </tr>
+                        </tfoot>
                     </table>
                 </div>
 
@@ -478,14 +491,26 @@
 
             renderTable(data) {
                 const tbody = document.getElementById('inventory-table-body');
+                const totalStockEl = document.getElementById('total-stock-page');
+                const totalValueEl = document.getElementById('total-value-page');
                 tbody.innerHTML = '';
 
                 if (!data || data.length === 0) {
                     tbody.innerHTML = '<tr><td colspan="15" class="px-6 py-4 text-center text-gray-500">No records found</td></tr>';
+                    if (totalStockEl) totalStockEl.textContent = '0';
+                    if (totalValueEl) totalValueEl.textContent = '0';
                     return;
                 }
 
+                let totalStockPage = 0;
+                let totalValuePage = 0;
+
                 data.forEach(row => {
+                    const stock = parseFloat(row.stock) || 0;
+                    const total = parseFloat(row.total) || 0;
+                    totalStockPage += stock;
+                    totalValuePage += total;
+
                     const tr = document.createElement('tr');
                     tr.className = 'hover:bg-gray-50';
 
@@ -497,10 +522,10 @@
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${row.warehouse_code || ''}</td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${row.warehouse_name || ''}</td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${row.bin || ''}</td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right font-medium">${formatNumber(row.stock || 0)}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right font-medium">${formatNumber(stock)}</td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${row.unit || ''}</td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">${formatNumber(row.item_cost || 0)}</td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right font-bold">${formatNumber(row.total || 0)}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right font-bold">${formatNumber(total)}</td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${row.area || ''}</td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${row.brand || ''}</td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${row.outlet || ''}</td>
@@ -509,6 +534,10 @@
 
                     tbody.appendChild(tr);
                 });
+
+                // Update totals in footer
+                if (totalStockEl) totalStockEl.textContent = formatNumber(totalStockPage);
+                if (totalValueEl) totalValueEl.textContent = formatNumber(Math.floor(totalValuePage));
             }
 
             updatePaginationControls(startIndex, endIndex) {

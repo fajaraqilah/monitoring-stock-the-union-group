@@ -323,6 +323,19 @@
                         <tbody id="transfer-table-body" class="bg-white divide-y divide-gray-200">
                             <!-- Table rows will be populated by JavaScript -->
                         </tbody>
+                        <tfoot class="bg-gray-50 font-bold border-t-2 border-gray-300">
+                            <tr>
+                                <td colspan="5" class="px-6 py-4 text-right text-xs text-gray-700 uppercase">Grand Total
+                                    (This Page):</td>
+                                <td id="total-qty-page"
+                                    class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">0</td>
+                                <td class="px-6 py-4"></td>
+                                <td class="px-6 py-4"></td>
+                                <td id="total-value-page"
+                                    class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">0</td>
+                                <td colspan="6" class="px-6 py-4"></td>
+                            </tr>
+                        </tfoot>
                     </table>
                 </div>
 
@@ -474,14 +487,26 @@
 
             renderTable(data) {
                 const tbody = document.getElementById('transfer-table-body');
+                const totalQtyEl = document.getElementById('total-qty-page');
+                const totalValueEl = document.getElementById('total-value-page');
                 tbody.innerHTML = '';
 
                 if (!data || data.length === 0) {
                     tbody.innerHTML = '<tr><td colspan="15" class="px-6 py-4 text-center text-gray-500">No records found</td></tr>';
+                    if (totalQtyEl) totalQtyEl.textContent = '0';
+                    if (totalValueEl) totalValueEl.textContent = '0';
                     return;
                 }
 
+                let totalQtyPage = 0;
+                let totalValuePage = 0;
+
                 data.forEach(row => {
+                    const qty = parseFloat(row.quantity) || 0;
+                    const total = parseFloat(row.total) || 0;
+                    totalQtyPage += qty;
+                    totalValuePage += total;
+
                     const tr = document.createElement('tr');
                     tr.className = 'hover:bg-gray-50';
 
@@ -491,10 +516,10 @@
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-medium">${row.document_number || ''}</td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${row.item_code || ''}</td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${row.item_description || ''}</td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right font-medium">${formatNumber(row.quantity || 0)}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right font-medium">${formatNumber(qty)}</td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${row.unit || ''}</td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">${formatNumber(row.stock_price || 0)}</td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right font-bold">${formatNumber(row.total || 0)}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right font-bold">${formatNumber(total)}</td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${row.from_warehouse_code || ''}</td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${row.from_warehouse_name || ''}</td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${row.from_location || ''}</td>
@@ -505,6 +530,10 @@
 
                     tbody.appendChild(tr);
                 });
+
+                // Update totals in footer
+                if (totalQtyEl) totalQtyEl.textContent = formatNumber(totalQtyPage);
+                if (totalValueEl) totalValueEl.textContent = formatNumber(Math.floor(totalValuePage));
             }
 
             updatePaginationControls(startIndex, endIndex) {
