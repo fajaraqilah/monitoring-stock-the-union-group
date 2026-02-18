@@ -151,7 +151,7 @@ class ChartManager {
   async createReceivingByDateChart(selectedDate = null, warehouseName = null) {
     let query = supabase
       .from('receiving_daily_summary')
-      .select('receiving_date, total_value, unit, warehouse_name')
+      .select('receiving_date, total_value, item_group, warehouse_name')
       .not('receiving_date', 'is', null)
       .order('receiving_date')
 
@@ -178,10 +178,10 @@ class ChartManager {
       return;
     }
 
-    // Group by Date AND Unit (or just Date if we want total value)
-    const groupedByDateAndUnit = {};
+    // Group by Date AND Item Group
+    const groupedByDateAndGroup = {};
     const allDatesSet = new Set();
-    const allUnitsSet = new Set();
+    const allGroupsSet = new Set();
 
     data.forEach((item) => {
       let dateStr;
@@ -192,33 +192,33 @@ class ChartManager {
         dateStr = String(item.receiving_date).split('T')[0];
       }
 
-      const unit = item.unit || 'Unknown';
+      const itemGroup = item.item_group || 'General';
       allDatesSet.add(dateStr);
-      allUnitsSet.add(unit);
+      allGroupsSet.add(itemGroup);
 
-      if (!groupedByDateAndUnit[unit]) {
-        groupedByDateAndUnit[unit] = {};
+      if (!groupedByDateAndGroup[itemGroup]) {
+        groupedByDateAndGroup[itemGroup] = {};
       }
-      if (!groupedByDateAndUnit[unit][dateStr]) {
-        groupedByDateAndUnit[unit][dateStr] = 0;
+      if (!groupedByDateAndGroup[itemGroup][dateStr]) {
+        groupedByDateAndGroup[itemGroup][dateStr] = 0;
       }
-      groupedByDateAndUnit[unit][dateStr] += parseFloat(item.total_value || 0);
+      groupedByDateAndGroup[itemGroup][dateStr] += parseFloat(item.total_value || 0);
     });
 
     const dates = Array.from(allDatesSet).sort();
-    const units = Array.from(allUnitsSet).sort();
+    const groups = Array.from(allGroupsSet).sort();
 
     const colors = [
       'rgb(75, 192, 192)', 'rgb(54, 162, 235)', 'rgb(255, 99, 132)',
       'rgb(255, 205, 86)', 'rgb(153, 102, 255)'
     ];
 
-    const datasets = units.map((unit, index) => {
-      const unitData = dates.map(date => groupedByDateAndUnit[unit]?.[date] || 0);
+    const datasets = groups.map((group, index) => {
+      const groupData = dates.map(date => groupedByDateAndGroup[group]?.[date] || 0);
       const color = colors[index % colors.length];
       return {
-        label: `Value (${unit})`,
-        data: unitData,
+        label: `Value (${group})`,
+        data: groupData,
         fill: true,
         backgroundColor: color.replace('rgb', 'rgba').replace(')', ', 0.1)'),
         borderColor: color,
@@ -284,7 +284,7 @@ class ChartManager {
     this.setupReceivingDropdown();
   }
 
-  // Update the line chart to show only one dataset (unit) based on dropdown selection
+  // Update the line chart to show only one dataset (group) based on dropdown selection
   updateReceivingChart(index) {
     if (!this.charts.receivingByDate || !this.receivingDatasets || !this.receivingDatasets[index]) return;
 
@@ -294,9 +294,9 @@ class ChartManager {
     this.charts.receivingByDate.update('none');
   }
 
-  // Setup dropdown for receiving chart unit selection
+  // Setup dropdown for receiving chart item group selection
   setupReceivingDropdown() {
-    const selector = document.getElementById('unit-selector');
+    const selector = document.getElementById('item-group-selector');
     if (!selector) return;
 
     // Clear and re-populate dropdown
@@ -319,7 +319,7 @@ class ChartManager {
       selector.dataset.hasListener = "true";
     }
 
-    // Hide if only one unit
+    // Hide if only one group
     const nav = document.getElementById('receiving-chart-nav');
     if (nav) {
       if (this.receivingDatasets.length <= 1) {

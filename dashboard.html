@@ -12,6 +12,10 @@
     <script src="./public/js/chart.min.js"></script>
     <!-- Chart.js DataLabels Plugin -->
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0"></script>
+    <!-- Export Libraries -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
     <style>
         .chart-container {
@@ -311,7 +315,23 @@
                     class="lg:col-span-2 bg-white p-6 rounded-lg shadow-sm border border-purple-100 flex flex-col h-full">
                     <div class="flex items-center justify-between mb-4">
                         <h3 class="text-lg font-bold text-gray-800">DSS: Stock Alerts & Recommendations</h3>
-                        <div class="flex items-center space-x-4">
+                        <div class="flex items-center space-x-2">
+                            <button id="export-dss-pdf" title="Export PDF"
+                                class="p-1.5 bg-red-50 text-red-600 rounded border border-red-200 hover:bg-red-100 transition-colors">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z">
+                                    </path>
+                                </svg>
+                            </button>
+                            <button id="export-dss-excel" title="Export Excel"
+                                class="p-1.5 bg-green-50 text-green-600 rounded border border-green-200 hover:bg-green-100 transition-colors">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z">
+                                    </path>
+                                </svg>
+                            </button>
                             <select id="recommendation-status-filter"
                                 class="text-xs border border-gray-300 rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-blue-500">
                                 <option value="All">All Status</option>
@@ -414,9 +434,27 @@
                             </tbody>
                         </table>
                     </div>
-                    <div class="p-4 border-t border-gray-100 text-right bg-gray-50 rounded-b-lg">
+                    <div class="p-4 border-t border-gray-100 flex justify-between items-center bg-gray-50 rounded-b-lg">
+                        <div class="flex space-x-2">
+                            <button id="export-abc-pdf"
+                                class="flex items-center px-3 py-2 bg-red-600 text-white rounded hover:bg-red-700 text-xs font-medium">
+                                <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z">
+                                    </path>
+                                </svg> PDF
+                            </button>
+                            <button id="export-abc-excel"
+                                class="flex items-center px-3 py-2 bg-green-600 text-white rounded hover:bg-green-700 text-xs font-medium">
+                                <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z">
+                                    </path>
+                                </svg> Excel
+                            </button>
+                        </div>
                         <button id="close-abc-modal-btn"
-                            class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 text-sm font-medium">Close</button>
+                            class="px-4 py-2 bg-gray-200 text-gray-800 rounded hover:bg-gray-300 text-sm font-medium">Close</button>
                     </div>
                 </div>
             </div>
@@ -437,9 +475,9 @@
                     <div class="flex justify-between items-center mb-4">
                         <h3 class="text-lg font-medium text-gray-900">Daily Receiving Value</h3>
                         <div id="receiving-chart-nav" class="flex items-center">
-                            <select id="unit-selector"
+                            <select id="item-group-selector"
                                 class="text-xs font-semibold bg-blue-50 border border-blue-200 text-blue-800 px-2 py-1 rounded focus:outline-none focus:ring-1 focus:ring-blue-500">
-                                <option value="">Select Unit</option>
+                                <option value="">Select Item Group</option>
                             </select>
                         </div>
                     </div>
@@ -499,6 +537,7 @@
         import { ChartManager } from './public/js/charts.js';
         import { AnalyticsManager } from './public/js/analytics.js';
         import { formatNumber } from './public/js/utils.js';
+        import { exportToPDF, exportToExcel } from './public/js/export.js';
 
         // Initialize dashboard
         document.addEventListener('DOMContentLoaded', async function () {
@@ -606,6 +645,7 @@
 
         let currentABCData = null; // Store data for modal
         let currentRecommendationsData = null; // Store data for filter
+        let currentABCCategory = null; // Store which category is open
 
         function renderABCAnalysis(data) {
             currentABCData = data;
@@ -639,6 +679,7 @@
 
             function openModal(category) {
                 if (!currentABCData) return;
+                currentABCCategory = category;
                 const items = currentABCData[category];
                 // Calculate percentage based on grand total
                 const grandTotal = ['A', 'B', 'C'].reduce((acc, cat) =>
@@ -696,6 +737,62 @@
 
             if (closeBtn) closeBtn.addEventListener('click', closeModal);
             if (closeBtnBottom) closeBtnBottom.addEventListener('click', closeModal);
+
+            // Export ABC Pareto Events
+            document.getElementById('export-abc-pdf').addEventListener('click', () => {
+                if (!currentABCData || !currentABCCategory) return;
+                const items = currentABCData[currentABCCategory];
+                const columns = [
+                    { header: 'Item Code', dataKey: 'item_code' },
+                    { header: 'Item Name', dataKey: 'item_name' },
+                    { header: 'Total Value (Rp)', dataKey: 'value', formatter: (val) => formatNumber(val), align: 'right' }
+                ];
+                exportToPDF(`ABC Analysis - Category ${currentABCCategory}`, `ABC_Pareto_${currentABCCategory}`, columns, items);
+            });
+
+            document.getElementById('export-abc-excel').addEventListener('click', () => {
+                if (!currentABCData || !currentABCCategory) return;
+                const items = currentABCData[currentABCCategory];
+                const columns = [
+                    { header: 'Item Code', dataKey: 'item_code' },
+                    { header: 'Item Name', dataKey: 'item_name' },
+                    { header: 'Total Value (Rp)', dataKey: 'value', formatter: (val) => formatNumber(val) }
+                ];
+                exportToExcel(`ABC_Pareto_${currentABCCategory}`, `Category ${currentABCCategory}`, columns, items);
+            });
+
+            // Export DSS Events
+            document.getElementById('export-dss-pdf').addEventListener('click', () => {
+                if (!currentRecommendationsData) return;
+                const statusFilter = document.getElementById('recommendation-status-filter').value;
+                const filteredData = statusFilter === 'All' ? currentRecommendationsData : currentRecommendationsData.filter(i => i.status === statusFilter);
+
+                const columns = [
+                    { header: 'Item Code', dataKey: 'item_code' },
+                    { header: 'Item Name', dataKey: 'item_name' },
+                    { header: 'Stock', dataKey: 'stock', formatter: (val) => formatNumber(val), align: 'right' },
+                    { header: 'Unit', dataKey: 'unit' },
+                    { header: 'Status', dataKey: 'status' },
+                    { header: 'Suggestion', dataKey: 'suggestion' }
+                ];
+                exportToPDF('DSS: Stock Alerts & Recommendations', 'Stock_Recommendations', columns, filteredData);
+            });
+
+            document.getElementById('export-dss-excel').addEventListener('click', () => {
+                if (!currentRecommendationsData) return;
+                const statusFilter = document.getElementById('recommendation-status-filter').value;
+                const filteredData = statusFilter === 'All' ? currentRecommendationsData : currentRecommendationsData.filter(i => i.status === statusFilter);
+
+                const columns = [
+                    { header: 'Item Code', dataKey: 'item_code' },
+                    { header: 'Item Name', dataKey: 'item_name' },
+                    { header: 'Stock', dataKey: 'stock', formatter: (val) => formatNumber(val) },
+                    { header: 'Unit', dataKey: 'unit' },
+                    { header: 'Status', dataKey: 'status' },
+                    { header: 'Suggestion', dataKey: 'suggestion' }
+                ];
+                exportToExcel('Stock_Recommendations', 'Recommendations', columns, filteredData);
+            });
 
             // Close on click outside
             modal.addEventListener('click', (e) => {
@@ -755,7 +852,7 @@
                 ]);
 
                 const allWarehouses = new Set();
-                
+
                 if (stockRes.data) stockRes.data.forEach(item => allWarehouses.add(item.warehouse_name));
                 if (receivingRes.data) receivingRes.data.forEach(item => allWarehouses.add(item.warehouse_name));
                 if (transferRes.data) transferRes.data.forEach(item => allWarehouses.add(item.warehouse_name));
@@ -796,7 +893,7 @@
                 if (!stockError && stockData) {
                     // Calculate Total Value: stock * item_cost
                     // Ensure we handle potentially missing item_cost by defaulting to 0
-                    const totalStock = stockData.reduce((sum, item) => sum + ((parseFloat(item.stock) || 0) * (parseFloat(item.item_cost) || 0)), 0);
+                    const totalStock = Math.floor(stockData.reduce((sum, item) => sum + ((parseFloat(item.stock) || 0) * (parseFloat(item.item_cost) || 0)), 0));
                     document.getElementById('total-stock').textContent = formatNumber(totalStock);
                 } else {
                     document.getElementById('total-stock').textContent = "Rp 0";
@@ -815,7 +912,7 @@
                 }
                 const { data: receivingData, error: receivingError } = await receivingQuery;
                 if (!receivingError && receivingData) {
-                    const totalReceiving = receivingData.reduce((sum, item) => sum + (parseFloat(item.total_value) || 0), 0);
+                    const totalReceiving = Math.floor(receivingData.reduce((sum, item) => sum + (parseFloat(item.total_value) || 0), 0));
                     document.getElementById('total-receiving').textContent = formatNumber(totalReceiving);
                 }
 
@@ -832,7 +929,7 @@
                 }
                 const { data: transferData, error: transferError } = await transferQuery;
                 if (!transferError && transferData) {
-                    const totalTransfer = transferData.reduce((sum, item) => sum + (parseFloat(item.total_value) || 0), 0);
+                    const totalTransfer = Math.floor(transferData.reduce((sum, item) => sum + (parseFloat(item.total_value) || 0), 0));
                     document.getElementById('total-transfer').textContent = formatNumber(totalTransfer);
                 }
             } catch (error) {

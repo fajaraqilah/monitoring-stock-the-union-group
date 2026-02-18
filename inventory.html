@@ -582,20 +582,46 @@
                     const uniqueWarehouses = [...allWarehouses].filter(Boolean).sort();
                     this.populateDatalist('warehouse-list', uniqueWarehouses);
 
-                    // For Item Group and Name, we might need to fetch from the main table but limited to a reasonable number of unique values
-                    // or just assume we can fetch them from the current dataset for now if no dedicated summary exists.
-                    // Let's try to get Item Groups from the main table (first 5000 rows to find groups)
-                    const { data: groupData } = await supabase.from('inventory_stock').select('item_group').limit(5000);
-                    if (groupData) {
-                        const uniqueGroups = [...new Set(groupData.map(item => item.item_group).filter(Boolean))].sort();
-                        this.populateDatalist('item-group-list', uniqueGroups);
+                    // Use pre-aggregated views to get unique values across the entire database
+                    // This bypasses the typical row limits encountered on the raw 'inventory_stock' table
+                    // Aggregate unique values from multiple tables to ensure nothing is missed
+                    const [stockGroups, stockNames, recData, transData] = await Promise.all([
+                        // Try views first as they are pre-aggregated
+                        supabase.from('stock_warehouse_value_summary').select('item_group'),
+                        supabase.from('stock_item_value_summary').select('item_name'),
+                        // Also fetch from raw tables with high limits to catch items not in views
+                        supabase.from('receiving').select('item_group, item_name').limit(15000),
+                        supabase.from('internal_transfer').select('item_description').limit(10000)
+                    ]);
+
+                    // Gather all Item Groups
+                    const allGroups = new Set();
+                    if (stockGroups.data) stockGroups.data.forEach(i => allGroups.add(i.item_group));
+                    if (recData.data) recData.data.forEach(i => allGroups.add(i.item_group));
+
+                    // Specific fallback for groups if set is still small
+                    if (allGroups.size <= 1) {
+                        const { data: fbGroups } = await supabase.from('inventory_stock').select('item_group').limit(20000);
+                        if (fbGroups) fbGroups.forEach(i => allGroups.add(i.item_group));
                     }
 
-                    const { data: nameData } = await supabase.from('inventory_stock').select('item_name').limit(5000);
-                    if (nameData) {
-                        const uniqueNames = [...new Set(nameData.map(item => item.item_name).filter(Boolean))].sort();
-                        this.populateDatalist('item-name-list', uniqueNames);
+                    const uniqueGroups = [...allGroups].filter(Boolean).sort();
+                    this.populateDatalist('item-group-list', uniqueGroups);
+
+                    // Gather all Item Names
+                    const allNames = new Set();
+                    if (stockNames.data) stockNames.data.forEach(i => allNames.add(i.item_name));
+                    if (recData.data) recData.data.forEach(i => allNames.add(i.item_name));
+                    if (transData.data) transData.data.forEach(i => allNames.add(i.item_description));
+
+                    // If still too few, fetch more from main table
+                    if (allNames.size < 50) {
+                        const { data: fbNames } = await supabase.from('inventory_stock').select('item_name').limit(40000);
+                        if (fbNames) fbNames.forEach(i => allNames.add(i.item_name));
                     }
+
+                    const uniqueNames = [...allNames].filter(Boolean).sort();
+                    this.populateDatalist('item-name-list', uniqueNames);
 
                 } catch (error) {
                     console.error('Error loading filter options:', error);
